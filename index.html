@@ -160,6 +160,24 @@
   @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
   .pix-waiting { animation: pulse 1.5s infinite; }
 
+  /* ESTILOS DO NOVO TOUR DE TUTORIAL */
+  #tutorial-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(3px); z-index: 9000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  #tutorial-overlay.active { opacity: 1; pointer-events: all; }
+  
+  #tutorial-dialog { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--accent); border-radius: 14px; padding: 20px; width: 90%; max-width: 400px; z-index: 9001; box-shadow: 0 10px 40px rgba(124,58,237,0.4); opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; gap: 12px; }
+  #tutorial-dialog.active { opacity: 1; pointer-events: all; transform: translateX(-50%) translateY(0); }
+  
+  .tut-header { display: flex; align-items: center; gap: 10px; }
+  .tut-icon { font-size: 1.5rem; }
+  #tut-title { font-size: 1.1rem; color: #fff; font-weight: 700; margin: 0;}
+  #tut-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.4; margin:0;}
+  .tut-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+  #tut-progress { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--accent2); }
+  .btn-tut { background: linear-gradient(135deg, var(--accent2), #ec4899); border: none; color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem;}
+  
+  /* A classe mágica que "ilumina" a ferramenta alvo do tutorial */
+  .tut-highlight { position: relative; z-index: 9002 !important; box-shadow: 0 0 0 4px var(--surface), 0 0 0 6px var(--accent2), 0 0 30px rgba(236,72,153,0.4) !important; border-radius: 12px; transition: all 0.3s; pointer-events: none;}
+
   footer{padding:16px;color:var(--muted);font-size:.68rem;font-family:'Space Mono',monospace;text-align:center}
 </style>
 </head>
@@ -202,7 +220,7 @@
     <option value="diamond">✦ Diamantes Geométricos</option>
   </select>
 
-  <div class="color-picking-zone">
+  <div class="color-picking-zone" id="tut-target-colors">
     <div class="color-header-actions" style="margin-bottom: 4px;">
       <span class="fl" style="margin-bottom:0; width:100%; display:flex; justify-content:space-between; align-items:center;">
         <span>Cores Padrão e Espectro Livre</span>
@@ -219,7 +237,7 @@
   </div>
 
   <label class="fl">Opacidade da logo ao fundo (Ajuste Fino)</label>
-  <div class="slider-row">
+  <div class="slider-row" id="tut-target-slider">
     <input type="range" id="sl-logo" min="5" max="80" value="40"/>
     <span class="slider-val" id="sl-logo-v">40%</span>
   </div>
@@ -263,7 +281,7 @@
   </div>
 </div>
 
-<footer>QRforma · Acesso Pro · v47.0</footer>
+<footer>QRforma · Acesso Pro · v48.0</footer>
 
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
@@ -290,10 +308,75 @@
     </div>
 </div>
 
+<div id="tutorial-overlay"></div>
+<div id="tutorial-dialog">
+    <div class="tut-header">
+        <span class="tut-icon">✨</span>
+        <h3 id="tut-title">Bem-vindo ao QRforma</h3>
+    </div>
+    <p id="tut-desc">Vamos criar o seu primeiro QR Code animado em 5 passos rápidos.</p>
+    <div class="tut-footer">
+        <span id="tut-progress">Introdução</span>
+        <button class="btn-tut" id="btn-tut-next">Começar</button>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
+// --- SISTEMA DE ONBOARDING (TUTORIAL) ---
+const tutorialSteps = [
+    { target: 'qr-url', title: '🔗 Destino do QR Code', desc: 'Cole aqui o link para onde o seu cliente vai ao escanear (ex: Instagram, Cardápio, WhatsApp).' },
+    { target: 'drop-zone', title: '🖼️ Identidade Visual', desc: 'Suba a logo da sua marca clicando aqui. Imagens com fundo transparente dão o melhor resultado.' },
+    { target: 'tut-target-colors', title: '🎨 Estilos e Cores', desc: 'Deixe com a sua cara! Arraste essa barra para pintar o QR Code inteiro com as cores da sua marca.' },
+    { target: 'tut-target-slider', title: '🎚️ Ajuste Fino', desc: 'Controle a mistura da logo com o fundo. Se a validação de leitura falhar, apenas diminua a opacidade.' },
+    { target: 'download-actions', title: '🚀 Tudo Pronto!', desc: 'Baixe as telas digitais ou libere a versão PRO para exportar vídeos animados em 60FPS para suas redes.' }
+];
+
+let currentTutStep = -1;
+
+function showTutorialStep(stepIndex) {
+    document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
+    
+    if (stepIndex >= tutorialSteps.length) {
+        document.getElementById('tutorial-overlay').classList.remove('active');
+        document.getElementById('tutorial-dialog').classList.remove('active');
+        localStorage.setItem('qrforma_tutorial_done', 'true');
+        return;
+    }
+
+    const step = tutorialSteps[stepIndex];
+    const targetEl = document.getElementById(step.target);
+    
+    if (targetEl) {
+        targetEl.classList.add('tut-highlight');
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    document.getElementById('tut-title').innerText = step.title;
+    document.getElementById('tut-desc').innerText = step.desc;
+    document.getElementById('tut-progress').innerText = `Passo ${stepIndex + 1} de ${tutorialSteps.length}`;
+    document.getElementById('btn-tut-next').innerText = stepIndex === tutorialSteps.length - 1 ? 'Concluir' : 'Próximo';
+}
+
+document.getElementById('btn-tut-next').addEventListener('click', () => {
+    currentTutStep++;
+    showTutorialStep(currentTutStep);
+});
+
+window.addEventListener('load', () => {
+    // Inicia o tutorial apenas se o usuário nunca tiver feito antes
+    if (!localStorage.getItem('qrforma_tutorial_done')) {
+        setTimeout(() => {
+            document.getElementById('tutorial-overlay').classList.add('active');
+            document.getElementById('tutorial-dialog').classList.add('active');
+        }, 800); // Pequeno atraso para a tela carregar primeiro
+    }
+});
+
+
+// --- LÓGICA ORIGINAL DO APLICATIVO ---
 function getOrGenerateToken() {
   let token = localStorage.getItem('qrforma_token');
   if (!token) {
@@ -470,7 +553,7 @@ function hexToRgb(hex) {
 
 function loadLogo(src, name){
   var img = new Image();
-  img.crossOrigin = "Anonymous"; // Trava de segurança para não bugar o download do canvas
+  img.crossOrigin = "Anonymous"; 
   img.onload = function(){
     logoImg = img;
     document.getElementById('preview-thumb').src = src;
@@ -485,8 +568,7 @@ window.addEventListener('load', () => {
     renderPalette();
     currentActiveColor = palette[0];
     updateColorUI(currentActiveColor);
-    // MUDANÇA: Carregando a sua logo oficial LogoQRforma.png por padrão
-    loadLogo('LogoQRforma.png', 'Logo QRforma');
+    loadLogo('LogoQRforma.png', 'Logo Oficial');
 });
 
 document.getElementById('logo-input').addEventListener('change', function(e){
@@ -568,7 +650,6 @@ async function generateQRLayers(url, logoAlpha, baseCol, styleType, quietZoneMul
       var ctxFG = cvsFG.getContext('2d'); if (!ctxFG) throw new Error("Memória insuficiente.");
       ctxFG.clearRect(0, 0, TOTAL_SIZE, TOTAL_SIZE); 
 
-      // MUDANÇA: O estilo 'classic' força o espaçamento para zero (blocos colados)
       var pad = isForScan || styleType === 'classic' ? 0 : cell * 0.08; 
       var actualStyle = isForScan ? 'square' : styleType;
       
