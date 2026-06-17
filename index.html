@@ -262,7 +262,7 @@
   </div>
 </div>
 
-<footer>QRforma · Acesso Pro · v44.0</footer>
+<footer>QRforma · Acesso Pro · v45.0</footer>
 
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
@@ -742,7 +742,8 @@ async function animatePixQR(pixText) {
     
     if (!pixLogo.complete) { await new Promise(r => pixLogo.onload = r); }
     
-    var l = await generateQRLayers(pixText, 0, [236, 72, 153], 'fluid', 4, false, 800);
+    // Cor branca [255, 255, 255] e estilo 'square' (quadrados)
+    var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 4, false, 800);
     var pixLayer = l.foreground;
     
     var startTime = performance.now();
@@ -774,15 +775,9 @@ async function animatePixQR(pixText) {
             ctx.drawImage(pixLayer, -w/2, -h/2, w, h); 
             ctx.restore();
         } else { 
-            let p = Math.min((t - 2200) / 400, 1.0); 
-            let op = 0.25 * easeOutCubic(p); 
-            
-            ctx.globalAlpha = 1.0; ctx.filter = 'none';
-            if (op > 0) { 
-                ctx.save(); ctx.globalAlpha = op; let sz = w * 0.85; 
-                drawLogoContained(ctx, pixLogo, (w-sz)/2, (w-sz)/2, sz, sz); 
-                ctx.restore(); 
-            }
+            // QR Code limpo e legível (opacidade da logo em 0% ao fundo)
+            ctx.globalAlpha = 1.0; 
+            ctx.filter = 'none';
             ctx.drawImage(pixLayer, 0, 0, w, h);
         }
         pixAnimReq = requestAnimationFrame(loop);
