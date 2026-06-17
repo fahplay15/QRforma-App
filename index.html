@@ -19,8 +19,7 @@
   }
   body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center; overflow-x:hidden;}
   header{width:100%;padding:20px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
-  .logo{font-family:'Space Mono',monospace;font-size:1.2rem;font-weight:700}
-  .logo span{color:var(--accent2)}
+  
   .badge{font-size:.65rem;font-family:'Space Mono',monospace;color:var(--accent2);border:1px solid var(--accent);padding:3px 10px;border-radius:20px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
   
   .hero{max-width:620px;width:100%;padding:40px 20px 24px;text-align:center}
@@ -169,7 +168,10 @@
 <body>
 
 <header>
-  <div class="logo">QR<span>forma</span></div>
+  <div class="logo">
+    <!-- Sua nova logo oficial apontando para o arquivo PNG -->
+    <img src="LogoQRforma.png" alt="Logo QRforma" style="height: 52px; width: auto; border-radius: 8px; object-fit: contain;">
+  </div>
   <span class="badge" id="pro-badge" style="display:none; border-color:#ec4899; color:#ec4899;">👑 Assinante Pro</span>
 </header>
 
@@ -239,6 +241,7 @@
       Processando Design...
     </div>
     
+    <!-- NOVO OVERLAY DE BLOQUEIO VISUAL (DESFOQUE) -->
     <div id="lock-overlay">
       <div class="lock-icon">🔒</div>
       <h3>Teste Grátis Esgotado</h3>
@@ -263,8 +266,9 @@
   </div>
 </div>
 
-<footer>QRforma · Acesso Pro · v42.3</footer>
+<footer>QRforma · Acesso Pro · v43.0</footer>
 
+<!-- MODAL DE PAYWALL PIX DINÂMICO -->
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
         <div class="pw-icon">🚀</div>
@@ -307,7 +311,7 @@ var clientToken = getOrGenerateToken();
 var isPremiumUser = false;
 var checkInterval = null;
 
-// Nova Função que verifica o limite e embaça a tela
+// Função que verifica o limite e embaça a tela
 function applyBlurIfLimitReached() {
     if (isPremiumUser) {
         document.getElementById('lock-overlay').classList.remove('active');
@@ -403,7 +407,7 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
 });
 
 
-// --- LÓGICA ORIGINAL DO CANVAS ---
+// --- LÓGICA DO CANVAS ---
 var DEMO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#13131a"/><circle cx="50" cy="45" r="22" fill="#7c3aed"/><path d="M30 75 Q50 55 70 75" stroke="#a855f7" stroke-width="6" fill="none"/></svg>';
 var logoImg = null;
 var palette = [[15, 15, 15], [242, 242, 242]]; 
