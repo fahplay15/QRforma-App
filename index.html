@@ -84,7 +84,6 @@
   .qr-container { position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; border-radius: 14px; overflow: hidden; background: #fff; padding: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 100%; box-sizing: border-box; }
   #qr-canvas { border-radius: 6px; width: 100%; max-width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: contain; transition: filter 0.2s; display: block; }
   
-  /* OVERLAYS DA TELA DO QR CODE */
   #live-overlay {
       position: absolute; inset:0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -93,7 +92,6 @@
   }
   #live-overlay.active { opacity: 1; }
 
-  /* OVERLAY DE BLOQUEIO DE LIMITE DE DOWNLOADS */
   #lock-overlay {
       position: absolute; inset: 0; background: rgba(10,10,15,0.75); backdrop-filter: blur(10px);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -169,8 +167,7 @@
 
 <header>
   <div class="logo">
-    <!-- Sua nova logo oficial apontando para o arquivo PNG -->
-    <img src="LogoQRforma.png" alt="Logo QRforma" style="height: 52px; width: auto; border-radius: 8px; object-fit: contain;">
+    <img src="LogoQRforma.jpg" alt="Logo QRforma" style="height: 52px; width: auto; border-radius: 8px; object-fit: contain;">
   </div>
   <span class="badge" id="pro-badge" style="display:none; border-color:#ec4899; color:#ec4899;">👑 Assinante Pro</span>
 </header>
@@ -241,7 +238,6 @@
       Processando Design...
     </div>
     
-    <!-- NOVO OVERLAY DE BLOQUEIO VISUAL (DESFOQUE) -->
     <div id="lock-overlay">
       <div class="lock-icon">🔒</div>
       <h3>Teste Grátis Esgotado</h3>
@@ -266,9 +262,8 @@
   </div>
 </div>
 
-<footer>QRforma · Acesso Pro · v43.0</footer>
+<footer>QRforma · Acesso Pro · v44.0</footer>
 
-<!-- MODAL DE PAYWALL PIX DINÂMICO -->
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
         <div class="pw-icon">🚀</div>
@@ -285,7 +280,7 @@
         <button class="btn-buy" id="btn-gerar-pix">Gerar PIX para Liberar (R$ 19,90)</button>
         
         <div id="area-pix" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid var(--border);">
-            <img id="img-qr-pix" style="width:100%; max-width:180px; border-radius:10px; margin-bottom:10px; border: 2px solid var(--accent);" />
+            <canvas id="canvas-qr-pix" style="width:100%; max-width:180px; aspect-ratio: 1/1; border-radius:10px; margin-bottom:10px; border: 2px solid var(--accent); display: block; margin: 0 auto;"></canvas>
             <input type="text" id="input-copia-cola" readonly value="" style="width:100%; padding:10px; font-size:0.7rem; border-radius:6px; border:1px solid var(--accent); background:var(--bg); color:var(--text); cursor:pointer; text-align:center;" title="Clique para copiar" onclick="this.select(); document.execCommand('copy'); alert('Código PIX Copiado!');" />
             <p class="pix-waiting" style="font-size:0.8rem; color:var(--ok-text); margin-top:10px;">⏳ Aguardando pagamento... <br>A tela será liberada automaticamente.</p>
         </div>
@@ -298,7 +293,6 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
-// --- IDENTIDADE SEGURA DO CLIENTE (TOKEN) ---
 function getOrGenerateToken() {
   let token = localStorage.getItem('qrforma_token');
   if (!token) {
@@ -311,7 +305,6 @@ var clientToken = getOrGenerateToken();
 var isPremiumUser = false;
 var checkInterval = null;
 
-// Função que verifica o limite e embaça a tela
 function applyBlurIfLimitReached() {
     if (isPremiumUser) {
         document.getElementById('lock-overlay').classList.remove('active');
@@ -323,9 +316,7 @@ function applyBlurIfLimitReached() {
     
     let freeDownloads = parseInt(localStorage.getItem('qrforma_free_downloads') || '0');
     if (freeDownloads >= 3) {
-        // Aplica o bloqueio visual
         document.getElementById('lock-overlay').classList.add('active');
-        // Altera o botão grátis para estado bloqueado
         let btnDigital = document.getElementById('btn-png-digital');
         btnDigital.classList.add('locked');
         btnDigital.innerHTML = '🔒 Grátis Esgotado';
@@ -361,7 +352,7 @@ function unlockProFeatures() {
     btnVideo.classList.remove('btn-pro');
     
     document.getElementById('paywall-modal').classList.remove('active');
-    applyBlurIfLimitReached(); // Isso vai remover o desfoque, pois isPremiumUser agora é true
+    applyBlurIfLimitReached(); 
     if (checkInterval) clearInterval(checkInterval);
 }
 
@@ -380,8 +371,8 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
         if (!res.ok) throw new Error("Falha ao se comunicar com o servidor");
         const pixData = await res.json();
 
-        document.getElementById('img-qr-pix').src = `data:image/jpeg;base64,${pixData.qr_code_base64}`;
         document.getElementById('input-copia-cola').value = pixData.qr_code;
+        animatePixQR(pixData.qr_code); 
         
         btn.style.display = 'none';
         document.getElementById('area-pix').style.display = 'block';
@@ -406,8 +397,6 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
     }
 });
 
-
-// --- LÓGICA DO CANVAS ---
 var DEMO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#13131a"/><circle cx="50" cy="45" r="22" fill="#7c3aed"/><path d="M30 75 Q50 55 70 75" stroke="#a855f7" stroke-width="6" fill="none"/></svg>';
 var logoImg = null;
 var palette = [[15, 15, 15], [242, 242, 242]]; 
@@ -674,7 +663,6 @@ document.getElementById('qr-url').addEventListener('input', triggerLiveUpdate);
 document.getElementById('qr-style').addEventListener('change', triggerLiveUpdate);
 document.getElementById('sl-logo').addEventListener('input', triggerLiveUpdate);
 
-// DOWNLOAD LIMITADO COM DESFOQUE
 document.getElementById('btn-png-digital').onclick = function(){
   if (isPremiumUser) {
     var a = document.createElement('a');
@@ -684,7 +672,6 @@ document.getElementById('btn-png-digital').onclick = function(){
     return;
   }
 
-  // Verifica o limite primeiro
   if (applyBlurIfLimitReached()) {
     document.getElementById('paywall-modal').classList.add('active');
     return;
@@ -704,7 +691,7 @@ document.getElementById('btn-png-digital').onclick = function(){
     alert(`Download concluído! Você ainda tem ${restam} ${restam === 1 ? 'download gratuito disponível' : 'downloads gratuitos disponíveis'}.`);
   } else {
     alert("Atenção: Este foi o seu último download gratuito.");
-    applyBlurIfLimitReached(); // Aciona o desfoque imediatamente após o 3º download
+    applyBlurIfLimitReached(); 
   }
 };
 
@@ -742,6 +729,68 @@ document.getElementById('btn-dl-video').addEventListener('click', async function
   }
   recorder.stop();
 });
+
+// --- MOTOR DE ANIMAÇÃO EXCLUSIVO PARA O PIX DE PAGAMENTO ---
+var pixAnimReq = null;
+var pixLogo = new Image();
+pixLogo.src = 'LogoQRforma.jpg'; 
+
+async function animatePixQR(pixText) {
+    var canvas = document.getElementById('canvas-qr-pix');
+    var ctx = canvas.getContext('2d');
+    canvas.width = 800; canvas.height = 800;
+    
+    if (!pixLogo.complete) { await new Promise(r => pixLogo.onload = r); }
+    
+    var l = await generateQRLayers(pixText, 0, [236, 72, 153], 'fluid', 4, false, 800);
+    var pixLayer = l.foreground;
+    
+    var startTime = performance.now();
+    
+    function loop(now) {
+        var t = (now - startTime) % 10000; 
+        var w = 800, h = 800, cx = 400, cy = 400;
+        var logoW = 500; 
+        
+        ctx.fillStyle = '#13131a';
+        ctx.fillRect(0, 0, w, h);
+        
+        if (t <= 1500) { 
+            let p = easeOutCubic(Math.min(t / 1000, 1)); 
+            ctx.globalAlpha = p; 
+            ctx.save(); ctx.translate(cx, cy); let s = 0.8 + (0.2 * p); ctx.scale(s, s); 
+            drawLogoContained(ctx, pixLogo, -logoW/2, -logoW/2, logoW, logoW); 
+            ctx.restore();
+        } else if (t <= 2200) { 
+            let p = easeInOutCubic((t - 1500) / 700);
+            
+            ctx.save(); ctx.globalAlpha = 1 - p; ctx.filter = `blur(${p * 20}px)`; 
+            ctx.translate(cx, cy); let ls = 1.0 + (0.3 * p); ctx.scale(ls, ls);
+            drawLogoContained(ctx, pixLogo, -logoW/2, -logoW/2, logoW, logoW); 
+            ctx.restore();
+            
+            ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; 
+            ctx.translate(cx, cy); let qs = 0.8 + (0.2 * p); ctx.scale(qs, qs);
+            ctx.drawImage(pixLayer, -w/2, -h/2, w, h); 
+            ctx.restore();
+        } else { 
+            let p = Math.min((t - 2200) / 400, 1.0); 
+            let op = 0.25 * easeOutCubic(p); 
+            
+            ctx.globalAlpha = 1.0; ctx.filter = 'none';
+            if (op > 0) { 
+                ctx.save(); ctx.globalAlpha = op; let sz = w * 0.85; 
+                drawLogoContained(ctx, pixLogo, (w-sz)/2, (w-sz)/2, sz, sz); 
+                ctx.restore(); 
+            }
+            ctx.drawImage(pixLayer, 0, 0, w, h);
+        }
+        pixAnimReq = requestAnimationFrame(loop);
+    }
+    
+    if(pixAnimReq) cancelAnimationFrame(pixAnimReq);
+    pixAnimReq = requestAnimationFrame(loop);
+}
 </script>
 </body>
 </html>
