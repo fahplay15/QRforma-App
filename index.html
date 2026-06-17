@@ -164,7 +164,8 @@
   #tutorial-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(3px); z-index: 9000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   #tutorial-overlay.active { opacity: 1; pointer-events: all; }
   
-  #tutorial-dialog { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--accent); border-radius: 14px; padding: 20px; width: 90%; max-width: 400px; z-index: 9001; box-shadow: 0 10px 40px rgba(124,58,237,0.4); opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; gap: 12px; }
+  /* Ajuste no z-index e posicionamento dinâmico do Dialog */
+  #tutorial-dialog { position: fixed; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--accent); border-radius: 14px; padding: 20px; width: 90%; max-width: 400px; z-index: 9005; box-shadow: 0 10px 40px rgba(124,58,237,0.4); opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; gap: 12px; }
   #tutorial-dialog.active { opacity: 1; pointer-events: all; transform: translateX(-50%) translateY(0); }
   
   .tut-header { display: flex; align-items: center; gap: 10px; }
@@ -175,7 +176,6 @@
   #tut-progress { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--accent2); }
   .btn-tut { background: linear-gradient(135deg, var(--accent2), #ec4899); border: none; color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem;}
   
-  /* A classe mágica que "ilumina" a ferramenta alvo do tutorial */
   .tut-highlight { position: relative; z-index: 9002 !important; box-shadow: 0 0 0 4px var(--surface), 0 0 0 6px var(--accent2), 0 0 30px rgba(236,72,153,0.4) !important; border-radius: 12px; transition: all 0.3s; pointer-events: none;}
 
   footer{padding:16px;color:var(--muted);font-size:.68rem;font-family:'Space Mono',monospace;text-align:center}
@@ -281,7 +281,7 @@
   </div>
 </div>
 
-<footer>QRforma · Acesso Pro · v48.0</footer>
+<footer>QRforma · Acesso Pro · v49.0</footer>
 
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
@@ -339,10 +339,15 @@ let currentTutStep = -1;
 function showTutorialStep(stepIndex) {
     document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
     
+    const dialog = document.getElementById('tutorial-dialog');
+    
     if (stepIndex >= tutorialSteps.length) {
         document.getElementById('tutorial-overlay').classList.remove('active');
-        document.getElementById('tutorial-dialog').classList.remove('active');
+        dialog.classList.remove('active');
         localStorage.setItem('qrforma_tutorial_done', 'true');
+        // Reseta as posições para limpar a tela
+        dialog.style.top = '';
+        dialog.style.bottom = '';
         return;
     }
 
@@ -351,7 +356,19 @@ function showTutorialStep(stepIndex) {
     
     if (targetEl) {
         targetEl.classList.add('tut-highlight');
-        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // MUDANÇA: Lógica inteligente para mover a caixa de mensagem
+        if (step.target === 'download-actions') {
+            // Se for o último passo, joga a caixa para o TOPO da tela
+            dialog.style.bottom = 'auto';
+            dialog.style.top = '30px'; 
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        } else {
+            // Se forem os primeiros passos, mantém no rodapé
+            dialog.style.top = 'auto';
+            dialog.style.bottom = '30px'; 
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
 
     document.getElementById('tut-title').innerText = step.title;
@@ -366,17 +383,17 @@ document.getElementById('btn-tut-next').addEventListener('click', () => {
 });
 
 window.addEventListener('load', () => {
-    // Inicia o tutorial apenas se o usuário nunca tiver feito antes
     if (!localStorage.getItem('qrforma_tutorial_done')) {
         setTimeout(() => {
             document.getElementById('tutorial-overlay').classList.add('active');
+            // Inicializa a caixa sempre por baixo no primeiro frame
+            document.getElementById('tutorial-dialog').style.bottom = '30px';
             document.getElementById('tutorial-dialog').classList.add('active');
-        }, 800); // Pequeno atraso para a tela carregar primeiro
+        }, 800); 
     }
 });
 
 
-// --- LÓGICA ORIGINAL DO APLICATIVO ---
 function getOrGenerateToken() {
   let token = localStorage.getItem('qrforma_token');
   if (!token) {
@@ -815,7 +832,6 @@ document.getElementById('btn-dl-video').addEventListener('click', async function
   recorder.stop();
 });
 
-// --- MOTOR DE ANIMAÇÃO EXCLUSIVO PARA O PIX DE PAGAMENTO ---
 var pixAnimReq = null;
 var pixLogo = new Image();
 pixLogo.src = 'LogoQRforma.png'; 
