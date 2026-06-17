@@ -85,6 +85,7 @@
   .qr-container { position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; border-radius: 14px; overflow: hidden; background: #fff; padding: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 100%; box-sizing: border-box; }
   #qr-canvas { border-radius: 6px; width: 100%; max-width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: contain; transition: filter 0.2s; display: block; }
   
+  /* OVERLAYS DA TELA DO QR CODE */
   #live-overlay {
       position: absolute; inset:0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -92,6 +93,19 @@
       opacity: 0; pointer-events: none; transition: opacity 0.15s; border-radius: 14px; z-index: 10;
   }
   #live-overlay.active { opacity: 1; }
+
+  /* OVERLAY DE BLOQUEIO DE LIMITE DE DOWNLOADS */
+  #lock-overlay {
+      position: absolute; inset: 0; background: rgba(10,10,15,0.75); backdrop-filter: blur(10px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #fff; font-family: 'Space Grotesk', sans-serif; text-align: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity 0.4s; z-index: 20; border-radius: 14px;
+  }
+  #lock-overlay.active { opacity: 1; pointer-events: all; }
+  .lock-icon { font-size: 2.5rem; margin-bottom: 8px; }
+  #lock-overlay h3 { font-size: 1.2rem; margin-bottom: 6px; color: var(--warn-text); }
+  #lock-overlay p { font-size: 0.85rem; color: #ddd; line-height: 1.4; }
+  .btn-unlock-small { margin-top: 15px; background: linear-gradient(135deg, var(--accent2), #ec4899); border: none; color: #fff; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
   
   .result-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:9px;font-size:.78rem;color:var(--muted);font-family:'Space Mono',monospace; flex-wrap: wrap; gap: 6px;}
   
@@ -102,8 +116,9 @@
   
   .btn-dl-digital { border-color: var(--info-border); color: #fff; }
   .btn-dl-digital:hover { background: var(--info-bg); }
+  .btn-dl-digital.locked { opacity: 0.5; border-color: var(--border); color: var(--muted); cursor: not-allowed; }
+  .btn-dl-digital.locked:hover { background: none; }
   
-  /* Estilos Visuais dos Botões PRO */
   .btn-pro { border-color: #ec4899; color: #fff; position: relative; overflow:hidden;}
   .btn-pro::after {content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transform:skewX(-20deg);transition:left 0.5s;}
   .btn-pro:hover::after {left:200%;}
@@ -114,7 +129,6 @@
   .spin{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:sp .7s linear infinite}
   @keyframes sp{to{transform:rotate(360deg)}}
   
-  /* --- ESTILOS DO PAYWALL MODAL E PIX --- */
   .paywall-modal {
       position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
       z-index: 9999; display: flex; align-items: center; justify-content: center;
@@ -146,7 +160,6 @@
       font-family: 'Space Grotesk', sans-serif; text-decoration: underline; font-size: 0.85rem;
   }
   
-  /* Animação do status de pagamento */
   @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
   .pix-waiting { animation: pulse 1.5s infinite; }
 
@@ -225,6 +238,14 @@
       <div class="spin" style="width:24px;height:24px;"></div>
       Processando Design...
     </div>
+    
+    <div id="lock-overlay">
+      <div class="lock-icon">🔒</div>
+      <h3>Teste Grátis Esgotado</h3>
+      <p>Você atingiu o limite de 3 arquivos visuais.<br>Libere a versão PRO para uso ilimitado.</p>
+      <button class="btn-unlock-small" onclick="document.getElementById('paywall-modal').classList.add('active')">Desbloquear Agora</button>
+    </div>
+
     <canvas id="qr-canvas"></canvas>
   </div>
   
@@ -242,7 +263,7 @@
   </div>
 </div>
 
-<footer>QRforma · Acesso Pro · v42.1</footer>
+<footer>QRforma · Acesso Pro · v42.3</footer>
 
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
@@ -251,6 +272,7 @@
         <p class="pw-desc">A versão básica é grátis, mas arquivos de altíssima definição e animações são recursos exclusivos da versão <strong>PRO</strong>.</p>
         
         <ul class="pw-features">
+            <li>✅ Downloads ilimitados (Acesso Grátis esgotado)</li>
             <li>✅ <strong>Vídeos Fluidos 60FPS</strong> para Telões e Instagram</li>
             <li>✅ <strong>Arquivos em 4K</strong> (Borda fina) para Gráficas</li>
             <li>✅ Liberação permanente neste navegador</li>
@@ -264,7 +286,7 @@
             <p class="pix-waiting" style="font-size:0.8rem; color:var(--ok-text); margin-top:10px;">⏳ Aguardando pagamento... <br>A tela será liberada automaticamente.</p>
         </div>
         
-        <button class="btn-close-modal" onclick="document.getElementById('paywall-modal').classList.remove('active')">Voltar para a versão grátis</button>
+        <button class="btn-close-modal" onclick="document.getElementById('paywall-modal').classList.remove('active')">Voltar</button>
     </div>
 </div>
 
@@ -272,7 +294,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
-// --- SISTEMA DE IDENTIDADE SEGURA DO CLIENTE (TOKEN) ---
+// --- IDENTIDADE SEGURA DO CLIENTE (TOKEN) ---
 function getOrGenerateToken() {
   let token = localStorage.getItem('qrforma_token');
   if (!token) {
@@ -285,17 +307,42 @@ var clientToken = getOrGenerateToken();
 var isPremiumUser = false;
 var checkInterval = null;
 
-// Verifica logo de início se o cliente já pagou em uma visita anterior
+// Nova Função que verifica o limite e embaça a tela
+function applyBlurIfLimitReached() {
+    if (isPremiumUser) {
+        document.getElementById('lock-overlay').classList.remove('active');
+        let btnDigital = document.getElementById('btn-png-digital');
+        btnDigital.classList.remove('locked');
+        btnDigital.innerHTML = '⬇ Tela Digital (Ilimitado)';
+        return false;
+    }
+    
+    let freeDownloads = parseInt(localStorage.getItem('qrforma_free_downloads') || '0');
+    if (freeDownloads >= 3) {
+        // Aplica o bloqueio visual
+        document.getElementById('lock-overlay').classList.add('active');
+        // Altera o botão grátis para estado bloqueado
+        let btnDigital = document.getElementById('btn-png-digital');
+        btnDigital.classList.add('locked');
+        btnDigital.innerHTML = '🔒 Grátis Esgotado';
+        return true;
+    }
+    return false;
+}
+
 async function verifyExistingAccess() {
     try {
         const checkRes = await fetch(`/api/checar-pagamento?token=${clientToken}`);
         const checkData = await checkRes.json();
-        if (checkData.status === "pago") { unlockProFeatures(); }
-    } catch(e) { console.log('Checagem inicial de licença falhou.'); }
+        if (checkData.status === "pago") { 
+            unlockProFeatures(); 
+        } else {
+            applyBlurIfLimitReached();
+        }
+    } catch(e) { applyBlurIfLimitReached(); }
 }
 verifyExistingAccess();
 
-// --- FUNÇÃO PARA LIBERAR INTERFACE PRO ---
 function unlockProFeatures() {
     isPremiumUser = true;
     document.getElementById('pro-badge').style.display = 'flex';
@@ -310,10 +357,10 @@ function unlockProFeatures() {
     btnVideo.classList.remove('btn-pro');
     
     document.getElementById('paywall-modal').classList.remove('active');
+    applyBlurIfLimitReached(); // Isso vai remover o desfoque, pois isPremiumUser agora é true
     if (checkInterval) clearInterval(checkInterval);
 }
 
-// --- INTEGRAÇÃO COM A API SERVERLESS (GERAR PIX) ---
 document.getElementById('btn-gerar-pix').addEventListener('click', async function() {
     var btn = this;
     btn.innerText = "⏳ Gerando PIX seguro...";
@@ -329,14 +376,12 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
         if (!res.ok) throw new Error("Falha ao se comunicar com o servidor");
         const pixData = await res.json();
 
-        // Exibe o PIX na tela
         document.getElementById('img-qr-pix').src = `data:image/jpeg;base64,${pixData.qr_code_base64}`;
         document.getElementById('input-copia-cola').value = pixData.qr_code;
         
         btn.style.display = 'none';
         document.getElementById('area-pix').style.display = 'block';
 
-        // Inicia a checagem automática a cada 4 segundos
         checkInterval = setInterval(async () => {
             try {
                 const checkRes = await fetch(`/api/checar-pagamento?token=${clientToken}`);
@@ -347,7 +392,7 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
                     unlockProFeatures();
                     alert("✅ Pagamento aprovado! O QRforma Pro foi desbloqueado com sucesso.");
                 }
-            } catch (err) { console.log("Aguardando verificação..."); }
+            } catch (err) { }
         }, 4000);
 
     } catch (e) {
@@ -358,7 +403,7 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
 });
 
 
-// --- RESTANTE DA LÓGICA ORIGINAL DO CANVAS E ANIMAÇÃO ---
+// --- LÓGICA ORIGINAL DO CANVAS ---
 var DEMO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#13131a"/><circle cx="50" cy="45" r="22" fill="#7c3aed"/><path d="M30 75 Q50 55 70 75" stroke="#a855f7" stroke-width="6" fill="none"/></svg>';
 var logoImg = null;
 var palette = [[15, 15, 15], [242, 242, 242]]; 
@@ -625,8 +670,38 @@ document.getElementById('qr-url').addEventListener('input', triggerLiveUpdate);
 document.getElementById('qr-style').addEventListener('change', triggerLiveUpdate);
 document.getElementById('sl-logo').addEventListener('input', triggerLiveUpdate);
 
+// DOWNLOAD LIMITADO COM DESFOQUE
 document.getElementById('btn-png-digital').onclick = function(){
-  var a = document.createElement('a'); a.download = 'QRforma-Digital.png'; a.href = layerDigitalMerged.toDataURL(); a.click();
+  if (isPremiumUser) {
+    var a = document.createElement('a');
+    a.download = 'QRforma-Digital.png';
+    a.href = layerDigitalMerged.toDataURL();
+    a.click();
+    return;
+  }
+
+  // Verifica o limite primeiro
+  if (applyBlurIfLimitReached()) {
+    document.getElementById('paywall-modal').classList.add('active');
+    return;
+  }
+
+  var a = document.createElement('a');
+  a.download = 'QRforma-Digital.png';
+  a.href = layerDigitalMerged.toDataURL();
+  a.click();
+
+  let freeDownloads = parseInt(localStorage.getItem('qrforma_free_downloads') || '0');
+  freeDownloads++;
+  localStorage.setItem('qrforma_free_downloads', freeDownloads);
+
+  let restam = 3 - freeDownloads;
+  if (restam > 0) {
+    alert(`Download concluído! Você ainda tem ${restam} ${restam === 1 ? 'download gratuito disponível' : 'downloads gratuitos disponíveis'}.`);
+  } else {
+    alert("Atenção: Este foi o seu último download gratuito.");
+    applyBlurIfLimitReached(); // Aciona o desfoque imediatamente após o 3º download
+  }
 };
 
 document.getElementById('btn-png-print').onclick = async function(){
