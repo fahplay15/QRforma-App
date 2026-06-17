@@ -179,7 +179,7 @@
 
 <div class="card">
   <label class="fl">Destino do QR code</label>
-  <input type="url" id="qr-url" placeholder="https://seunegocio.com.br" value="https://example.com"/>
+  <input type="url" id="qr-url" placeholder="https://q-rforma-app.vercel.app/" value="https://q-rforma-app.vercel.app/"/>
 
   <label class="fl">Logo da marca</label>
   <div id="drop-zone">
@@ -196,6 +196,7 @@
   <label class="fl">Estilo dos Pontinhos (Módulos)</label>
   <select id="qr-style" class="custom-select">
     <option value="circle">● Círculos Clássicos</option>
+    <option value="classic">⬛ Quadrados (Padrão Raiz)</option>
     <option value="square">■ Quadrados Modernos</option>
     <option value="fluid">💧 Gotas Fluidas</option>
     <option value="diamond">✦ Diamantes Geométricos</option>
@@ -262,7 +263,7 @@
   </div>
 </div>
 
-<footer>QRforma · Acesso Pro · v46.0</footer>
+<footer>QRforma · Acesso Pro · v47.0</footer>
 
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
@@ -397,7 +398,6 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
     }
 });
 
-var DEMO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#13131a"/><circle cx="50" cy="45" r="22" fill="#7c3aed"/><path d="M30 75 Q50 55 70 75" stroke="#a855f7" stroke-width="6" fill="none"/></svg>';
 var logoImg = null;
 var palette = [[15, 15, 15], [242, 242, 242]]; 
 var selPalIdx = -1; 
@@ -470,6 +470,7 @@ function hexToRgb(hex) {
 
 function loadLogo(src, name){
   var img = new Image();
+  img.crossOrigin = "Anonymous"; // Trava de segurança para não bugar o download do canvas
   img.onload = function(){
     logoImg = img;
     document.getElementById('preview-thumb').src = src;
@@ -484,7 +485,8 @@ window.addEventListener('load', () => {
     renderPalette();
     currentActiveColor = palette[0];
     updateColorUI(currentActiveColor);
-    loadLogo('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(DEMO_SVG), 'Logo Teste (Padrão)');
+    // MUDANÇA: Carregando a sua logo oficial LogoQRforma.png por padrão
+    loadLogo('LogoQRforma.png', 'Logo QRforma');
 });
 
 document.getElementById('logo-input').addEventListener('change', function(e){
@@ -517,7 +519,7 @@ function drawModule(ctx, type, x, y, size, pad) {
   var r = size / 2, cx = x + r, cy = y + r, d = size - (pad * 2);
   ctx.beginPath();
   if (type === 'circle') { ctx.arc(cx, cy, (size/2) - pad, 0, Math.PI * 2); ctx.fill(); } 
-  else if (type === 'square') { ctx.fillRect(x + pad, y + pad, d, d); } 
+  else if (type === 'square' || type === 'classic') { ctx.fillRect(x + pad, y + pad, d, d); } 
   else if (type === 'fluid') {
     ctx.moveTo(cx, y + pad); ctx.arcTo(x + size - pad, y + pad, x + size - pad, y + size - pad, r - pad);
     ctx.lineTo(cx, y + size - pad); ctx.arcTo(x + pad, y + size - pad, x + pad, y + pad, r - pad); ctx.closePath(); ctx.fill();
@@ -550,11 +552,9 @@ function drawLogoContained(ctx, img, x, y, w, h) {
     ctx.drawImage(img, x, y, dw, dh);
 }
 
-// MUDANÇA: Adicionado o parâmetro 'ecl' (Error Correction Level)
 async function generateQRLayers(url, logoAlpha, baseCol, styleType, quietZoneMultiplier, isForScan = false, coreSize = 800, ecl = QRCode.CorrectLevel.H){
     var tmp = document.createElement('div'); tmp.style.display = 'none'; document.body.appendChild(tmp);
     try {
-      // Usa o ecl repassado pela função (Padrão: H, Pix: L)
       var qrCodeObj = new QRCode(tmp, { text: url, correctLevel: ecl });
       await new Promise(r => setTimeout(r, 15)); 
       var oQR = qrCodeObj._oQRCode;
@@ -568,7 +568,9 @@ async function generateQRLayers(url, logoAlpha, baseCol, styleType, quietZoneMul
       var ctxFG = cvsFG.getContext('2d'); if (!ctxFG) throw new Error("Memória insuficiente.");
       ctxFG.clearRect(0, 0, TOTAL_SIZE, TOTAL_SIZE); 
 
-      var pad = isForScan ? 0 : cell * 0.08; var actualStyle = isForScan ? 'square' : styleType;
+      // MUDANÇA: O estilo 'classic' força o espaçamento para zero (blocos colados)
+      var pad = isForScan || styleType === 'classic' ? 0 : cell * 0.08; 
+      var actualStyle = isForScan ? 'square' : styleType;
       
       for (var row = 0; row < mc; row++){
         for (var col = 0; col < mc; col++){
@@ -744,7 +746,6 @@ async function animatePixQR(pixText) {
     
     if (!pixLogo.complete) { await new Promise(r => pixLogo.onload = r); }
     
-    // MUDANÇAS: Nível L para gerar blocos maiores e 'isForScan=true' para remover qualquer espaçamento.
     var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 4, true, 800, QRCode.CorrectLevel.L);
     var pixLayer = l.foreground;
     
