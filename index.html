@@ -262,7 +262,7 @@
   </div>
 </div>
 
-<footer>QRforma · Acesso Pro · v45.0</footer>
+<footer>QRforma · Acesso Pro · v46.0</footer>
 
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
@@ -550,10 +550,12 @@ function drawLogoContained(ctx, img, x, y, w, h) {
     ctx.drawImage(img, x, y, dw, dh);
 }
 
-async function generateQRLayers(url, logoAlpha, baseCol, styleType, quietZoneMultiplier, isForScan = false, coreSize = 800){
+// MUDANÇA: Adicionado o parâmetro 'ecl' (Error Correction Level)
+async function generateQRLayers(url, logoAlpha, baseCol, styleType, quietZoneMultiplier, isForScan = false, coreSize = 800, ecl = QRCode.CorrectLevel.H){
     var tmp = document.createElement('div'); tmp.style.display = 'none'; document.body.appendChild(tmp);
     try {
-      var qrCodeObj = new QRCode(tmp, { text: url, correctLevel: QRCode.CorrectLevel.H });
+      // Usa o ecl repassado pela função (Padrão: H, Pix: L)
+      var qrCodeObj = new QRCode(tmp, { text: url, correctLevel: ecl });
       await new Promise(r => setTimeout(r, 15)); 
       var oQR = qrCodeObj._oQRCode;
       if (!oQR) throw new Error("A matriz não pôde ser gerada.");
@@ -742,8 +744,8 @@ async function animatePixQR(pixText) {
     
     if (!pixLogo.complete) { await new Promise(r => pixLogo.onload = r); }
     
-    // Cor branca [255, 255, 255] e estilo 'square' (quadrados)
-    var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 4, false, 800);
+    // MUDANÇAS: Nível L para gerar blocos maiores e 'isForScan=true' para remover qualquer espaçamento.
+    var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 4, true, 800, QRCode.CorrectLevel.L);
     var pixLayer = l.foreground;
     
     var startTime = performance.now();
@@ -775,7 +777,6 @@ async function animatePixQR(pixText) {
             ctx.drawImage(pixLayer, -w/2, -h/2, w, h); 
             ctx.restore();
         } else { 
-            // QR Code limpo e legível (opacidade da logo em 0% ao fundo)
             ctx.globalAlpha = 1.0; 
             ctx.filter = 'none';
             ctx.drawImage(pixLayer, 0, 0, w, h);
