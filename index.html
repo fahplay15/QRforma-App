@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QRforma Pro · Live Spectrum Engine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0a0f;--surface:#13131a;--border:#1e1e2e;
+    --accent:#7c3aed;--accent2:#a855f7;--glow:rgba(124,58,237,0.15);
+    --text:#f0f0f8;--muted:#6b6b8a;
+    --ok-bg:rgba(34,197,94,.1);--ok-border:#22c55e;--ok-text:#4ade80;
+    --warn-bg:rgba(251,191,36,.1);--warn-border:#fbbf24;--warn-text:#fcd34d;
+    --fail-bg:rgba(239,68,68,.1);--fail-border:#ef4444;--fail-text:#f87171;
+    --info-bg:rgba(124,58,237,.12);--info-border:#7c3aed;--info-text:#c084fc;
+    --thumb-color: #ffffff; 
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center; overflow-x:hidden;}
+  header{width:100%;padding:20px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+  .logo{font-family:'Space Mono',monospace;font-size:1.2rem;font-weight:700}
+  .logo span{color:var(--accent2)}
+  .badge{font-size:.65rem;font-family:'Space Mono',monospace;color:var(--accent2);border:1px solid var(--accent);padding:3px 10px;border-radius:20px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+  
+  .hero{max-width:620px;width:100%;padding:40px 20px 24px;text-align:center}
+  .hero h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;line-height:1.1;letter-spacing:-.04em;margin-bottom:8px}
+  .hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent2),#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .hero p{color:var(--muted);font-size:.88rem;line-height:1.6}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px;width:100%;max-width:620px;margin:0 16px 40px; box-sizing:border-box;}
+  .fl{font-size:.68rem;font-family:'Space Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;display:block}
+  
+  input[type="url"]{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.91rem;padding:10px 13px;outline:none;transition:border-color .2s;margin-bottom:20px; box-sizing:border-box;}
+  input[type="url"]:focus{border-color:var(--accent)}
+  
+  #drop-zone{border:2px dashed var(--border);border-radius:12px;padding:24px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;margin-bottom:12px;background:var(--bg)}
+  #drop-zone:hover,#drop-zone.drag{border-color:var(--accent);background:var(--glow)}
+  #drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .uico{width:36px;height:36px;margin:0 auto 8px;background:var(--glow);border:1px solid var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem}
+  
+  #logo-preview-wrap{display:none;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;align-items:center;gap:10px}
+  #preview-thumb{max-height:40px;max-width:90px;border-radius:4px;object-fit:contain}
+  #logo-status{font-size:.78rem;color:var(--accent2)}
+  #btn-clear{margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:.73rem;transition:border-color .2s}
+  
+  select.custom-select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.91rem;padding:10px 13px;outline:none;margin-bottom:20px;cursor:pointer; box-sizing:border-box;}
+  
+  .color-picking-zone{display:flex;flex-direction:column;gap:10px;background:var(--bg);padding:14px;border-radius:10px;border:1px solid var(--border);margin-bottom:20px}
+  
+  .palette-layout { display: flex; align-items: center; gap: 16px; width: 100%; margin-top: 4px; }
+  #palette-swatches{display:flex;gap:8px;}
+  .swatch{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s, box-shadow .15s}
+  .swatch:hover{transform:scale(1.1)}
+  .swatch.sel{box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px #fff; transform:scale(1.05)}
+  
+  .spectrum-container { flex: 1; display: flex; align-items: center; position: relative;}
+  #spectrum-slider {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 14px; border-radius: 20px;
+    background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+    outline: none; cursor: pointer; border: 1px solid rgba(255,255,255,0.05);
+  }
+  #spectrum-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--thumb-color); border: 3px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    transition: transform 0.1s; cursor: grab;
+  }
+  #spectrum-slider::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.15); }
+  #spectrum-slider::-moz-range-thumb {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--thumb-color); 
+    border: 3px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.6); cursor: grab;
+  }
+  
+  .slider-row{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .slider-row input[type=range]{flex:1;accent-color:var(--accent2);cursor:pointer}
+  .slider-val{font-family:'Space Mono',monospace;font-size:.76rem;color:var(--accent2);min-width:34px;text-align:right}
+
+  .divider{border:none;border-top:1px solid var(--border);margin:22px 0}
+
+  #verify-log{margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
+  .vlog-item{display:flex;align-items:flex-start;gap:9px;border-radius:9px;padding:10px 13px;font-size:.82rem;line-height:1.4;word-break:break-word;}
+  .vlog-item.info{background:var(--info-bg);border:1px solid var(--info-border);color:var(--info-text)}
+  .vlog-item.ok{background:var(--ok-bg);border:1px solid var(--ok-border);color:var(--ok-text)}
+  .vlog-item.fail{background:var(--fail-bg);border:1px solid var(--fail-border);color:var(--fail-text)}
+  
+  .qr-container { position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; border-radius: 14px; overflow: hidden; background: #fff; padding: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 100%; box-sizing: border-box; }
+  #qr-canvas { border-radius: 6px; width: 100%; max-width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: contain; transition: filter 0.2s; display: block; }
+  
+  #live-overlay {
+      position: absolute; inset:0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #fff; font-family: 'Space Mono', monospace; font-size: 0.8rem; gap: 10px;
+      opacity: 0; pointer-events: none; transition: opacity 0.15s; border-radius: 14px; z-index: 10;
+  }
+  #live-overlay.active { opacity: 1; }
+  
+  .result-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:9px;font-size:.78rem;color:var(--muted);font-family:'Space Mono',monospace; flex-wrap: wrap; gap: 6px;}
+  
+  .actions{display:flex;flex-direction:column;gap:10px; width: 100%;}
+  .actions-row{display:flex;gap:8px; flex-wrap: wrap;} 
+  .btn-sec{flex:1 1 45%; background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.84rem;font-weight:500;padding:11px;cursor:pointer;transition:border-color .2s,background .2s; text-align: center; display:flex; align-items:center; justify-content:center; gap:6px;}
+  .btn-sec:hover{border-color:var(--accent2);background:var(--glow)}
+  
+  .btn-dl-digital { border-color: var(--info-border); color: #fff; }
+  .btn-dl-digital:hover { background: var(--info-bg); }
+  
+  /* Estilos Visuais dos Botões PRO */
+  .btn-pro { border-color: #ec4899; color: #fff; position: relative; overflow:hidden;}
+  .btn-pro::after {content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transform:skewX(-20deg);transition:left 0.5s;}
+  .btn-pro:hover::after {left:200%;}
+  .btn-pro:hover { background: rgba(236,72,153,0.15); }
+  .btn-dl-video { margin-top:4px; flex-basis: 100%; background: linear-gradient(90deg, rgba(236,72,153,0.1), transparent);}
+
+  #loader-video{display:none;flex-direction:column;align-items:center;gap:5px;padding:16px;color:var(--muted);font-size:.84rem; margin-top: 10px;}
+  .spin{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  
+  /* --- ESTILOS DO PAYWALL MODAL E PIX --- */
+  .paywall-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+      z-index: 9999; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 20px;
+  }
+  .paywall-modal.active { opacity: 1; pointer-events: all; }
+  .paywall-card {
+      background: var(--surface); border: 1px solid var(--accent); border-radius: 16px;
+      padding: 32px 24px; max-width: 400px; width: 100%; text-align: center;
+      box-shadow: 0 10px 40px rgba(124,58,237,0.2); transform: translateY(20px); transition: transform 0.3s;
+  }
+  .paywall-modal.active .paywall-card { transform: translateY(0); }
+  .pw-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .pw-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; color: #fff; }
+  .pw-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+  .pw-features { text-align: left; margin-bottom: 24px; background: var(--bg); padding: 16px; border-radius: 8px; font-size: 0.85rem;}
+  .pw-features li { margin-bottom: 8px; color: var(--text); list-style: none; display: flex; gap: 8px; align-items: center;}
+  
+  .btn-buy {
+      display: inline-block; width: 100%; background: linear-gradient(135deg, var(--accent2), #ec4899);
+      color: #fff; text-decoration: none; padding: 14px; border-radius: 10px; font-weight: 700;
+      transition: opacity 0.2s; border: none; font-family: 'Space Grotesk', sans-serif; cursor:pointer; font-size: 1rem;
+  }
+  .btn-buy:hover { opacity: 0.9; }
+  .btn-buy:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  .btn-close-modal {
+      background: none; border: none; color: var(--muted); margin-top: 16px; cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif; text-decoration: underline; font-size: 0.85rem;
+  }
+  
+  /* Animação do status de pagamento */
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+  .pix-waiting { animation: pulse 1.5s infinite; }
+
+  footer{padding:16px;color:var(--muted);font-size:.68rem;font-family:'Space Mono',monospace;text-align:center}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">QR<span>forma</span></div>
+  <span class="badge" id="pro-badge" style="display:none; border-color:#ec4899; color:#ec4899;">👑 Assinante Pro</span>
+</header>
+
+<div class="hero">
+  <h1>Transforme seus QR Codes<br>em algo <em>surpreendente</em></h1>
+  <p>Conecte sua marca ao cliente com transições fluidas de Motion Design a 60 FPS. Escolha tons livremente no gradiente com resposta em <strong>tempo real</strong>.</p>
+</div>
+
+<div class="card">
+  <label class="fl">Destino do QR code</label>
+  <input type="url" id="qr-url" placeholder="https://seunegocio.com.br" value="https://example.com"/>
+
+  <label class="fl">Logo da marca</label>
+  <div id="drop-zone">
+    <input type="file" id="logo-input" accept="image/*"/>
+    <div class="uico">🖼</div>
+    <p><strong>Clique para escolher</strong> sua logo<br><span style="font-size:.76rem">PNG transparente recomendado</span></p>
+  </div>
+  <div id="logo-preview-wrap">
+    <img id="preview-thumb" alt=""/>
+    <span id="logo-status"></span>
+    <button id="btn-clear">✕ remover</button>
+  </div>
+
+  <label class="fl">Estilo dos Pontinhos (Módulos)</label>
+  <select id="qr-style" class="custom-select">
+    <option value="circle">● Círculos Clássicos</option>
+    <option value="square">■ Quadrados Modernos</option>
+    <option value="fluid">💧 Gotas Fluidas</option>
+    <option value="diamond">✦ Diamantes Geométricos</option>
+  </select>
+
+  <div class="color-picking-zone">
+    <div class="color-header-actions" style="margin-bottom: 4px;">
+      <span class="fl" style="margin-bottom:0; width:100%; display:flex; justify-content:space-between; align-items:center;">
+        <span>Cores Padrão e Espectro Livre</span>
+        <span id="color-hex-label" style="color:var(--accent2); font-weight:700; font-size:0.75rem;">#FFFFFF</span>
+      </span>
+    </div>
+    
+    <div class="palette-layout">
+      <div id="palette-swatches"></div>
+      <div class="spectrum-container" title="Arraste para escolher a cor instantaneamente">
+        <input type="range" id="spectrum-slider" min="0" max="360" value="265">
+      </div>
+    </div>
+  </div>
+
+  <label class="fl">Opacidade da logo ao fundo (Ajuste Fino)</label>
+  <div class="slider-row">
+    <input type="range" id="sl-logo" min="5" max="80" value="40"/>
+    <span class="slider-val" id="sl-logo-v">40%</span>
+  </div>
+
+  <hr class="divider"/>
+  
+  <div id="verify-log"></div>
+  
+  <div class="result-meta">
+    <span>Status do Scanner: <strong id="final-conf">—</strong></span>
+    <span style="font-size:0.65rem; padding:2px 6px; background:var(--info-bg); color:var(--info-text); border-radius:4px;">MOTION ATIVO (10s | 60FPS)</span>
+  </div>
+  
+  <div class="qr-container">
+    <div id="live-overlay">
+      <div class="spin" style="width:24px;height:24px;"></div>
+      Processando Design...
+    </div>
+    <canvas id="qr-canvas"></canvas>
+  </div>
+  
+  <div id="loader-video">
+    <div class="spin"></div>
+    <span id="loader-msg" style="text-align:center">Renderizando Vídeo HD...</span>
+  </div>
+
+  <div class="actions" id="download-actions">
+    <div class="actions-row">
+      <button class="btn-sec btn-dl-digital" id="btn-png-digital">⬇ Tela Digital (Grátis)</button>
+      <button class="btn-sec btn-pro" id="btn-png-print">🔒 Imprimir 4K (PRO)</button>
+    </div>
+    <button class="btn-sec btn-pro btn-dl-video" id="btn-dl-video">🎬 Baixar Vídeo Fluido 60FPS (PRO)</button>
+  </div>
+</div>
+
+<footer>QRforma · Acesso Pro · v42.1</footer>
+
+<div class="paywall-modal" id="paywall-modal">
+    <div class="paywall-card">
+        <div class="pw-icon">🚀</div>
+        <h2 class="pw-title">Desbloqueie o Potencial Máximo</h2>
+        <p class="pw-desc">A versão básica é grátis, mas arquivos de altíssima definição e animações são recursos exclusivos da versão <strong>PRO</strong>.</p>
+        
+        <ul class="pw-features">
+            <li>✅ <strong>Vídeos Fluidos 60FPS</strong> para Telões e Instagram</li>
+            <li>✅ <strong>Arquivos em 4K</strong> (Borda fina) para Gráficas</li>
+            <li>✅ Liberação permanente neste navegador</li>
+        </ul>
+
+        <button class="btn-buy" id="btn-gerar-pix">Gerar PIX para Liberar (R$ 19,90)</button>
+        
+        <div id="area-pix" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid var(--border);">
+            <img id="img-qr-pix" style="width:100%; max-width:180px; border-radius:10px; margin-bottom:10px; border: 2px solid var(--accent);" />
+            <input type="text" id="input-copia-cola" readonly value="" style="width:100%; padding:10px; font-size:0.7rem; border-radius:6px; border:1px solid var(--accent); background:var(--bg); color:var(--text); cursor:pointer; text-align:center;" title="Clique para copiar" onclick="this.select(); document.execCommand('copy'); alert('Código PIX Copiado!');" />
+            <p class="pix-waiting" style="font-size:0.8rem; color:var(--ok-text); margin-top:10px;">⏳ Aguardando pagamento... <br>A tela será liberada automaticamente.</p>
+        </div>
+        
+        <button class="btn-close-modal" onclick="document.getElementById('paywall-modal').classList.remove('active')">Voltar para a versão grátis</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+<script>
+// --- SISTEMA DE IDENTIDADE SEGURA DO CLIENTE (TOKEN) ---
+function getOrGenerateToken() {
+  let token = localStorage.getItem('qrforma_token');
+  if (!token) {
+    token = 'qrforma_' + Math.random().toString(36).substring(2, 12);
+    localStorage.setItem('qrforma_token', token);
+  }
+  return token;
+}
+var clientToken = getOrGenerateToken();
+var isPremiumUser = false;
+var checkInterval = null;
+
+// Verifica logo de início se o cliente já pagou em uma visita anterior
+async function verifyExistingAccess() {
+    try {
+        const checkRes = await fetch(`/api/checar-pagamento?token=${clientToken}`);
+        const checkData = await checkRes.json();
+        if (checkData.status === "pago") { unlockProFeatures(); }
+    } catch(e) { console.log('Checagem inicial de licença falhou.'); }
+}
+verifyExistingAccess();
+
+// --- FUNÇÃO PARA LIBERAR INTERFACE PRO ---
+function unlockProFeatures() {
+    isPremiumUser = true;
+    document.getElementById('pro-badge').style.display = 'flex';
+    
+    let btnPrint = document.getElementById('btn-png-print');
+    btnPrint.innerHTML = '⬇ Imprimir 4K (Liberado)';
+    btnPrint.classList.remove('btn-pro');
+    btnPrint.classList.add('btn-dl-print');
+    
+    let btnVideo = document.getElementById('btn-dl-video');
+    btnVideo.innerHTML = '🎬 Baixar Vídeo 60FPS (Liberado)';
+    btnVideo.classList.remove('btn-pro');
+    
+    document.getElementById('paywall-modal').classList.remove('active');
+    if (checkInterval) clearInterval(checkInterval);
+}
+
+// --- INTEGRAÇÃO COM A API SERVERLESS (GERAR PIX) ---
+document.getElementById('btn-gerar-pix').addEventListener('click', async function() {
+    var btn = this;
+    btn.innerText = "⏳ Gerando PIX seguro...";
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/gerar-pix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: clientToken })
+        });
+        
+        if (!res.ok) throw new Error("Falha ao se comunicar com o servidor");
+        const pixData = await res.json();
+
+        // Exibe o PIX na tela
+        document.getElementById('img-qr-pix').src = `data:image/jpeg;base64,${pixData.qr_code_base64}`;
+        document.getElementById('input-copia-cola').value = pixData.qr_code;
+        
+        btn.style.display = 'none';
+        document.getElementById('area-pix').style.display = 'block';
+
+        // Inicia a checagem automática a cada 4 segundos
+        checkInterval = setInterval(async () => {
+            try {
+                const checkRes = await fetch(`/api/checar-pagamento?token=${clientToken}`);
+                const checkData = await checkRes.json();
+                
+                if (checkData.status === "pago") {
+                    clearInterval(checkInterval);
+                    unlockProFeatures();
+                    alert("✅ Pagamento aprovado! O QRforma Pro foi desbloqueado com sucesso.");
+                }
+            } catch (err) { console.log("Aguardando verificação..."); }
+        }, 4000);
+
+    } catch (e) {
+        alert("Ocorreu um erro ao gerar o pagamento. Tente novamente mais tarde.");
+        btn.innerText = "Tentar Gerar Novamente";
+        btn.disabled = false;
+    }
+});
+
+
+// --- RESTANTE DA LÓGICA ORIGINAL DO CANVAS E ANIMAÇÃO ---
+var DEMO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#13131a"/><circle cx="50" cy="45" r="22" fill="#7c3aed"/><path d="M30 75 Q50 55 70 75" stroke="#a855f7" stroke-width="6" fill="none"/></svg>';
+var logoImg = null;
+var palette = [[15, 15, 15], [242, 242, 242]]; 
+var selPalIdx = -1; 
+var currentActiveColor = [124, 58, 237]; 
+var animRequest = null;
+var animStartTime = 0;
+var layerForeground = null; 
+var layerDigitalMerged = null;
+var liveUpdateTimer = null; 
+
+function updateColorUI(rgbArray) {
+    var hex = rgbToHex(rgbArray[0], rgbArray[1], rgbArray[2]).toUpperCase();
+    document.documentElement.style.setProperty('--thumb-color', hex);
+    document.getElementById('color-hex-label').textContent = hex;
+    document.getElementById('color-hex-label').style.color = hex;
+}
+
+var spectrumSlider = document.getElementById('spectrum-slider');
+spectrumSlider.addEventListener('input', function() {
+  selPalIdx = -1;
+  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('sel'));
+  var hue = parseInt(this.value) / 360;
+  currentActiveColor = hslToRgb(hue, 0.85, 0.45); 
+  updateColorUI(currentActiveColor);
+  triggerLiveUpdate();
+});
+
+document.getElementById('sl-logo').addEventListener('input', function(){
+  document.getElementById('sl-logo-v').textContent = this.value + '%';
+});
+
+function rr(v){ return Math.round(v); }
+function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+function easeInOutCubic(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+function hslToRgb(h, s, l) {
+    var r, g, b;
+    if (s == 0) { r = g = b = l; } 
+    else {
+        var hue2rgb = function hue2rgb(p, q, t) {
+            if (t < 0) t += 1; if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q - p) * 6 * t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        }
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s; var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3);
+    }
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function lum(c){ return c.reduce((acc,v,i) => { v /= 255; v = v <= .03928 ? v/12.92 : Math.pow((v+.055)/1.055, 2.4); return acc + v * [.2126,.7152,.0722][i]; }, 0); }
+function contrast(a, b){ var la = lum(a), lb = lum(b); return (Math.max(la,lb) + .05) / (Math.min(la,lb) + .05); }
+
+function ensureContrast(col, bg){
+  var c = col.slice(); var bgLum = lum(bg); var isBgDark = bgLum < 0.5; 
+  for (var i = 0; i < 80; i++){
+    if (contrast(c, bg) >= 4.0) return c;
+    if (isBgDark) { c = [c[0] + (255-c[0])*0.15, c[1] + (255-c[1])*0.15, c[2] + (255-c[2])*0.15]; } 
+    else { c = [c[0]*.85, c[1]*.85, c[2]*.85]; }
+  }
+  return isBgDark ? [255,255,255] : [10,10,10];
+}
+
+function rgbToHex(r, g, b) { return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
+function hexToRgb(hex) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [124,58,237];
+}
+
+function loadLogo(src, name){
+  var img = new Image();
+  img.onload = function(){
+    logoImg = img;
+    document.getElementById('preview-thumb').src = src;
+    document.getElementById('logo-status').textContent = '✓ ' + name;
+    document.getElementById('logo-preview-wrap').style.display = 'flex';
+    triggerLiveUpdate(); 
+  };
+  img.src = src;
+}
+
+window.addEventListener('load', () => {
+    renderPalette();
+    currentActiveColor = palette[0];
+    updateColorUI(currentActiveColor);
+    loadLogo('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(DEMO_SVG), 'Logo Teste (Padrão)');
+});
+
+document.getElementById('logo-input').addEventListener('change', function(e){
+  var f = e.target.files[0]; if (!f) return;
+  var r = new FileReader(); r.onload = ev => loadLogo(ev.target.result, f.name); r.readAsDataURL(f);
+});
+document.getElementById('btn-clear').addEventListener('click', function(){
+  logoImg = null; document.getElementById('logo-input').value = '';
+  document.getElementById('logo-preview-wrap').style.display = 'none'; triggerLiveUpdate();
+});
+
+function renderPalette(){
+  var cont = document.getElementById('palette-swatches'); cont.innerHTML = '';
+  palette.forEach((c, i) => {
+    var sw = document.createElement('div'); sw.className = 'swatch' + (i === selPalIdx ? ' sel' : '');
+    sw.style.background = `rgb(${rr(c[0])},${rr(c[1])},${rr(c[2])})`;
+    if (i === 0) sw.style.border = "1px solid rgba(255, 255, 255, 0.15)"; 
+    if (i === 1) sw.style.border = "1px solid #444"; 
+
+    sw.addEventListener('click', () => { 
+      selPalIdx = i; currentActiveColor = palette[i];
+      document.querySelectorAll('.swatch').forEach((s,j) => s.classList.toggle('sel', j === i)); 
+      updateColorUI(currentActiveColor); triggerLiveUpdate(); 
+    });
+    cont.appendChild(sw);
+  });
+}
+
+function drawModule(ctx, type, x, y, size, pad) {
+  var r = size / 2, cx = x + r, cy = y + r, d = size - (pad * 2);
+  ctx.beginPath();
+  if (type === 'circle') { ctx.arc(cx, cy, (size/2) - pad, 0, Math.PI * 2); ctx.fill(); } 
+  else if (type === 'square') { ctx.fillRect(x + pad, y + pad, d, d); } 
+  else if (type === 'fluid') {
+    ctx.moveTo(cx, y + pad); ctx.arcTo(x + size - pad, y + pad, x + size - pad, y + size - pad, r - pad);
+    ctx.lineTo(cx, y + size - pad); ctx.arcTo(x + pad, y + size - pad, x + pad, y + pad, r - pad); ctx.closePath(); ctx.fill();
+  } else if (type === 'diamond') {
+    ctx.moveTo(cx, y + pad); ctx.lineTo(x + size - pad, cy); ctx.lineTo(cx, y + size - pad); ctx.lineTo(x + pad, cy); ctx.closePath(); ctx.fill();
+  }
+}
+
+function drawFinders(ctx, n, cell, col, offset, isForScan, canvasBgColor){
+  var bgRgb = hexToRgb(canvasBgColor); var fcArray = ensureContrast(col.slice(), bgRgb);
+  var fc = `rgb(${rr(fcArray[0])},${rr(fcArray[1])},${rr(fcArray[2])})`;
+
+  [{tr:0,tc:0},{tr:0,tc:n-7},{tr:n-7,tc:0}].forEach(fp => {
+    var x0 = (fp.tc * cell) + offset, y0 = (fp.tr * cell) + offset, s7 = cell * 7, padW = cell * 0.05; 
+    ctx.fillStyle = canvasBgColor; ctx.beginPath(); 
+    if (isForScan) ctx.fillRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2)); else ctx.roundRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2), cell * 0.8); ctx.fill();
+    var rOut = isForScan ? 0 : cell * 0.8, rMid = isForScan ? 0 : cell * 0.5, rIn = isForScan ? 0 : cell * 0.3;
+    ctx.fillStyle = fc; ctx.beginPath(); 
+    if (isForScan) ctx.fillRect(x0, y0, s7, s7); else ctx.roundRect(x0, y0, s7, s7, rOut); ctx.fill();
+    ctx.fillStyle = canvasBgColor; ctx.beginPath(); 
+    if (isForScan) ctx.fillRect(x0+cell, y0+cell, cell*5, cell*5); else ctx.roundRect(x0+cell, y0+cell, cell*5, cell*5, rMid); ctx.fill();
+    ctx.fillStyle = fc; ctx.beginPath(); 
+    if (isForScan) ctx.fillRect(x0+cell*2, y0+cell*2, cell*3, cell*3); else ctx.roundRect(x0+cell*2, y0+cell*2, cell*3, cell*3, rIn); ctx.fill();
+  });
+}
+
+function drawLogoContained(ctx, img, x, y, w, h) {
+    if (!img) return; var ratio = img.width / img.height; var dw = w, dh = h;
+    if (ratio > 1) { dh = w / ratio; y += (h - dh)/2; } else { dw = h * ratio; x += (w - dw)/2; }
+    ctx.drawImage(img, x, y, dw, dh);
+}
+
+async function generateQRLayers(url, logoAlpha, baseCol, styleType, quietZoneMultiplier, isForScan = false, coreSize = 800){
+    var tmp = document.createElement('div'); tmp.style.display = 'none'; document.body.appendChild(tmp);
+    try {
+      var qrCodeObj = new QRCode(tmp, { text: url, correctLevel: QRCode.CorrectLevel.H });
+      await new Promise(r => setTimeout(r, 15)); 
+      var oQR = qrCodeObj._oQRCode;
+      if (!oQR) throw new Error("A matriz não pôde ser gerada.");
+
+      var mc = oQR.moduleCount; var cell = coreSize / mc; 
+      var QUIET_ZONE = Math.ceil(cell * quietZoneMultiplier); var TOTAL_SIZE = coreSize + (QUIET_ZONE * 2);
+      var isLightModule = lum(baseCol) > 0.5; var canvasBgColor = isLightModule ? '#13131a' : '#ffffff';
+
+      var cvsFG = document.createElement('canvas'); cvsFG.width = TOTAL_SIZE; cvsFG.height = TOTAL_SIZE;
+      var ctxFG = cvsFG.getContext('2d'); if (!ctxFG) throw new Error("Memória insuficiente.");
+      ctxFG.clearRect(0, 0, TOTAL_SIZE, TOTAL_SIZE); 
+
+      var pad = isForScan ? 0 : cell * 0.08; var actualStyle = isForScan ? 'square' : styleType;
+      
+      for (var row = 0; row < mc; row++){
+        for (var col = 0; col < mc; col++){
+          if (!oQR.isDark(row, col)) continue; 
+          if ((row < 7 && col < 7) || (row < 7 && col >= mc-7) || (row >= mc-7 && col < 7)) continue;
+          var x = (col * cell) + QUIET_ZONE, y = (row * cell) + QUIET_ZONE;
+          ctxFG.fillStyle = `rgb(${rr(baseCol[0])},${rr(baseCol[1])},${rr(baseCol[2])})`;
+          drawModule(ctxFG, actualStyle, x, y, cell, pad);
+        }
+      }
+      drawFinders(ctxFG, mc, cell, baseCol, QUIET_ZONE, isForScan, canvasBgColor); 
+
+      var cvsMerged = document.createElement('canvas'); cvsMerged.width = TOTAL_SIZE; cvsMerged.height = TOTAL_SIZE;
+      var ctxMerged = cvsMerged.getContext('2d');
+      ctxMerged.fillStyle = canvasBgColor; ctxMerged.fillRect(0, 0, TOTAL_SIZE, TOTAL_SIZE);
+      if (logoImg && logoAlpha > 0){ ctxMerged.save(); ctxMerged.globalAlpha = logoAlpha; drawLogoContained(ctxMerged, logoImg, QUIET_ZONE, QUIET_ZONE, coreSize, coreSize); ctxMerged.restore(); }
+      ctxMerged.drawImage(cvsFG, 0, 0); document.body.removeChild(tmp);
+      return { foreground: cvsFG, merged: cvsMerged, bgColor: canvasBgColor };
+    } catch(e) { if (document.body.contains(tmp)) document.body.removeChild(tmp); throw e; }
+}
+
+function simulateRealScan(sourceCanvas) {
+    if (typeof jsQR === 'undefined') { return { data: document.getElementById('qr-url').value }; }
+    var scanSize = 800; var temp = document.createElement('canvas'); temp.width = scanSize; temp.height = scanSize;
+    var tCtx = temp.getContext('2d'); tCtx.drawImage(sourceCanvas, 0, 0, scanSize, scanSize);
+    var imgData = tCtx.getImageData(0, 0, scanSize, scanSize);
+    return jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
+}
+
+function drawAnimationFrame(ctx, w, h, time) {
+    var cx = w / 2, cy = h / 2; var padSafety = Math.ceil((w / 2048) * 100); var logoW = w - padSafety*2;
+    var isLightModule = lum(currentActiveColor) > 0.5; var canvasBgColor = isLightModule ? '#13131a' : '#ffffff';
+    
+    ctx.resetTransform(); ctx.fillStyle = canvasBgColor; ctx.fillRect(0, 0, w, h);
+
+    if (time <= 1500) { 
+        let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy);
+        let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale); drawLogoContained(ctx, logoImg, -logoW/2, -logoW/2, logoW, logoW);
+    } else if (time <= 2200) { 
+        let p = easeInOutCubic((time - 1500) / 700);
+        ctx.save(); ctx.globalAlpha = 1 - p; ctx.filter = `blur(${p * 20}px)`; ctx.translate(cx, cy); let ls = 1.0 + (0.3 * p); ctx.scale(ls, ls);
+        drawLogoContained(ctx, logoImg, -logoW/2, -logoW/2, logoW, logoW); ctx.restore();
+        ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; ctx.translate(cx, cy); let qs = 0.8 + (0.2 * p); ctx.scale(qs, qs);
+        ctx.drawImage(layerForeground, -w/2, -h/2, w, h); ctx.restore();
+    } else { 
+        let opacityMax = parseInt(document.getElementById('sl-logo').value) / 100; let p = Math.min((time - 2200) / 400, 1.0); 
+        let currentOpacity = opacityMax * easeOutCubic(p); ctx.globalAlpha = 1.0; ctx.filter = 'none';
+        if (logoImg && currentOpacity > 0) { ctx.save(); ctx.globalAlpha = currentOpacity; let qrDrawSize = w * 0.85; drawLogoContained(ctx, logoImg, (w-qrDrawSize)/2, (w-qrDrawSize)/2, qrDrawSize, qrDrawSize); ctx.restore(); }
+        ctx.drawImage(layerForeground, 0, 0, w, h);
+    }
+}
+
+function animationLoop(timestamp) {
+    if (!animStartTime) animStartTime = timestamp; var elapsedTime = (timestamp - animStartTime) % 10000; 
+    var c = document.getElementById('qr-canvas');
+    if(c.width > 0) drawAnimationFrame(c.getContext('2d'), c.width, c.height, elapsedTime);
+    animRequest = requestAnimationFrame(animationLoop);
+}
+
+async function runEngine() {
+  var url = document.getElementById('qr-url').value; var logBox = document.getElementById('verify-log'); var finalConf = document.getElementById('final-conf');
+  if (!url || url.trim() === "") {
+      logBox.innerHTML = `<div class="vlog-item info"><span class="vlog-icon">ℹ</span><div class="vlog-body"><strong>Aguardando link válido...</strong><span>Digite o destino do QR Code.</span></div></div>`;
+      finalConf.innerHTML = '—'; if(animRequest) cancelAnimationFrame(animRequest); return; 
+  }
+  if(animRequest) cancelAnimationFrame(animRequest); animStartTime = 0;
+  var opacity = parseInt(document.getElementById('sl-logo').value) / 100; var styleType = document.getElementById('qr-style').value; var baseCol = currentActiveColor; 
+  var overlay = document.getElementById('live-overlay'); if(overlay) overlay.classList.add('active'); 
+
+  try {
+    var layersPreview = await generateQRLayers(url, opacity, baseCol, styleType, 4, false, 800);
+    var layersScan    = await generateQRLayers(url, opacity, baseCol, styleType, 4, true, 800); 
+    layerForeground = layersPreview.foreground; layerDigitalMerged = layersPreview.merged;    
+    var scanResult = simulateRealScan(layersScan.merged);
+    
+    if (scanResult && scanResult.data === url) {
+        logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>Contraste ideal e dados mapeados com segurança para o link.</span></div></div>`;
+        finalConf.innerHTML = '<strong style="color:var(--ok-border)">Operacional</strong>';
+    } else {
+        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Risco de erro no sensor. Reduza a opacidade ou troque a cor.</span></div></div>`;
+        finalConf.innerHTML = '<strong style="color:var(--fail-border)">Risco Detetado</strong>';
+    }
+    var destCanvas = document.getElementById('qr-canvas'); destCanvas.width = 1200; destCanvas.height = 1200; 
+    drawAnimationFrame(destCanvas.getContext('2d'), 1200, 1200, 9999); animRequest = requestAnimationFrame(animationLoop);
+  } catch (err) {
+    logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Erro no Processamento</strong><span>${err.message || 'Falha ao renderizar. Verifique o link.'}</span></div></div>`;
+    finalConf.innerHTML = '<strong style="color:var(--fail-border)">Falha Crítica</strong>';
+  } finally { if(overlay) overlay.classList.remove('active'); }
+}
+
+function triggerLiveUpdate() { clearTimeout(liveUpdateTimer); liveUpdateTimer = setTimeout(() => { runEngine(); }, 250); }
+
+document.getElementById('qr-url').addEventListener('input', triggerLiveUpdate);
+document.getElementById('qr-style').addEventListener('change', triggerLiveUpdate);
+document.getElementById('sl-logo').addEventListener('input', triggerLiveUpdate);
+
+document.getElementById('btn-png-digital').onclick = function(){
+  var a = document.createElement('a'); a.download = 'QRforma-Digital.png'; a.href = layerDigitalMerged.toDataURL(); a.click();
+};
+
+document.getElementById('btn-png-print').onclick = async function(){
+  if (!isPremiumUser) { document.getElementById('paywall-modal').classList.add('active'); return; }
+  
+  var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando 4K...";
+  try {
+    var l = await generateQRLayers(document.getElementById('qr-url').value, parseInt(document.getElementById('sl-logo').value) / 100, currentActiveColor, document.getElementById('qr-style').value, 2, false, 2048);
+    var a = document.createElement('a'); a.download = 'QRforma-Impressao-4K.png'; a.href = l.merged.toDataURL('image/png'); a.click();
+  } catch(e) { alert("Erro ao gerar arquivo: " + e.message); }
+  btn.innerText = oldTxt;
+};
+
+document.getElementById('btn-dl-video').addEventListener('click', async function(){
+  if (!isPremiumUser) { document.getElementById('paywall-modal').classList.add('active'); return; }
+
+  document.getElementById('loader-video').style.display = 'flex';
+  var vCanvas = document.createElement('canvas'); vCanvas.width = 1080; vCanvas.height = 1080; var vCtx = vCanvas.getContext('2d');
+  
+  var tempHighRes = await generateQRLayers(document.getElementById('qr-url').value, parseInt(document.getElementById('sl-logo').value) / 100, currentActiveColor, document.getElementById('qr-style').value, 4, false, 1080);
+  var oldForeground = layerForeground; layerForeground = tempHighRes.foreground;
+  
+  var stream = vCanvas.captureStream(60); var recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }); var chunks = [];
+  recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
+  recorder.onstop = () => {
+      var blob = new Blob(chunks, { type: 'video/webm' }); var url = URL.createObjectURL(blob);
+      var a = document.createElement('a'); a.href = url; a.download = 'QRforma-Motion-10s-60fps.webm'; a.click();
+      document.getElementById('loader-video').style.display = 'none'; layerForeground = oldForeground; 
+  };
+  
+  recorder.start(); var totalDur = 10000; var fps = 60; var frameTime = 1000 / fps;
+  for(let t = 0; t <= totalDur; t += frameTime) {
+      drawAnimationFrame(vCtx, vCanvas.width, vCanvas.height, t); await new Promise(r => setTimeout(r, frameTime)); 
+  }
+  recorder.stop();
+});
+</script>
+</body>
+</html>
