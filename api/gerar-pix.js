@@ -13,7 +13,7 @@ export default async function handler(req, res) {
                 "X-Idempotency-Key": token
             },
             body: JSON.stringify({
-                transaction_amount: 1, // Valor alterado para teste
+                transaction_amount: 19.90, // Defina o preço do seu acesso aqui
                 description: "QRforma Pro - Acesso Vitalício",
                 payment_method_id: "pix",
                 payer: { email: "cliente@qrforma.com.br" }, // Email padrão para aprovação
