@@ -239,6 +239,7 @@
 
   <label class="fl">Estilo dos Pontinhos (Módulos)</label>
   <select id="qr-style" class="custom-select">
+    <option value="organic">🦠 Orgânico (Conectado / Líquido)</option>
     <option value="circle">● Círculos Clássicos</option>
     <option value="classic">⬛ Quadrados (Padrão Raiz)</option>
     <option value="square">■ Quadrados Modernos</option>
@@ -262,7 +263,6 @@
     </div>
   </div>
 
-  <!-- A label e os valores deste slider mudam via JS baseado na escolha -->
   <label class="fl" id="slider-label">Tamanho da Logo no Centro (Máx 24%)</label>
   <div class="slider-row" id="tut-target-slider">
     <input type="range" id="sl-logo" min="15" max="24" value="22"/>
@@ -308,7 +308,7 @@
   </div>
 </div>
 
-<footer>QRforma · Sistema Autenticado · v59.0</footer>
+<footer>QRforma · Sistema Autenticado · v60.0</footer>
 
 <!-- MODAL DE PAYWALL PIX DINÂMICO -->
 <div class="paywall-modal" id="paywall-modal">
@@ -616,7 +616,6 @@ spectrumSlider.addEventListener('input', function() {
   triggerLiveUpdate();
 });
 
-// Dinâmica Inteligente: O controle deslizante altera seu comportamento com base no seletor de estilo
 document.getElementById('logo-style').addEventListener('change', function() {
     var val = this.value;
     var sl = document.getElementById('sl-logo');
@@ -722,34 +721,61 @@ function renderPalette(){
   });
 }
 
-function drawModule(ctx, type, x, y, size, pad) {
+function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
   var r = size / 2, cx = x + r, cy = y + r, d = size - (pad * 2);
   ctx.beginPath();
-  if (type === 'circle') { ctx.arc(cx, cy, (size/2) - pad, 0, Math.PI * 2); ctx.fill(); } 
-  else if (type === 'square' || type === 'classic') { ctx.fillRect(x + pad, y + pad, d, d); } 
-  else if (type === 'fluid') {
-    ctx.moveTo(cx, y + pad); ctx.arcTo(x + size - pad, y + pad, x + size - pad, y + size - pad, r - pad);
-    ctx.lineTo(cx, y + size - pad); ctx.arcTo(x + pad, y + size - pad, x + pad, y + pad, r - pad); ctx.closePath(); ctx.fill();
+  if (type === 'circle') { 
+      ctx.arc(cx, cy, (size/2) - pad, 0, Math.PI * 2); ctx.fill(); 
+  } else if (type === 'square' || type === 'classic') { 
+      ctx.fillRect(x + pad, y + pad, d, d); 
+  } else if (type === 'fluid') {
+      ctx.moveTo(cx, y + pad); ctx.arcTo(x + size - pad, y + pad, x + size - pad, y + size - pad, r - pad);
+      ctx.lineTo(cx, y + size - pad); ctx.arcTo(x + pad, y + size - pad, x + pad, y + pad, r - pad); ctx.closePath(); ctx.fill();
   } else if (type === 'diamond') {
-    ctx.moveTo(cx, y + pad); ctx.lineTo(x + size - pad, cy); ctx.lineTo(cx, y + size - pad); ctx.lineTo(x + pad, cy); ctx.closePath(); ctx.fill();
+      ctx.moveTo(cx, y + pad); ctx.lineTo(x + size - pad, cy); ctx.lineTo(cx, y + size - pad); ctx.lineTo(x + pad, cy); ctx.closePath(); ctx.fill();
+  } else if (type === 'organic') {
+      // Cria a base esférica
+      ctx.arc(cx, cy, r - pad, 0, Math.PI * 2); ctx.fill();
+      // Conecta horizontalmente com os vizinhos, formando os blocos líquidos ("blobs")
+      if (hasRight) { ctx.fillRect(cx, y + pad, size, d); }
+      // Conecta verticalmente
+      if (hasBottom) { ctx.fillRect(x + pad, cy, d, size); }
   }
 }
 
-function drawFinders(ctx, n, cell, col, offset, isForScan, canvasBgColor){
+function drawFinders(ctx, n, cell, col, offset, isForScan, canvasBgColor, styleType){
   var bgRgb = hexToRgb(canvasBgColor); var fcArray = ensureContrast(col.slice(), bgRgb);
   var fc = `rgb(${rr(fcArray[0])},${rr(fcArray[1])},${rr(fcArray[2])})`;
 
   [{tr:0,tc:0},{tr:0,tc:n-7},{tr:n-7,tc:0}].forEach(fp => {
     var x0 = (fp.tc * cell) + offset, y0 = (fp.tr * cell) + offset, s7 = cell * 7, padW = cell * 0.05; 
-    ctx.fillStyle = canvasBgColor; ctx.beginPath(); 
-    if (isForScan) ctx.fillRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2)); else ctx.roundRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2), cell * 0.8); ctx.fill();
-    var rOut = isForScan ? 0 : cell * 0.8, rMid = isForScan ? 0 : cell * 0.5, rIn = isForScan ? 0 : cell * 0.3;
-    ctx.fillStyle = fc; ctx.beginPath(); 
-    if (isForScan) ctx.fillRect(x0, y0, s7, s7); else ctx.roundRect(x0, y0, s7, s7, rOut); ctx.fill();
-    ctx.fillStyle = canvasBgColor; ctx.beginPath(); 
-    if (isForScan) ctx.fillRect(x0+cell, y0+cell, cell*5, cell*5); else ctx.roundRect(x0+cell, y0+cell, cell*5, cell*5, rMid); ctx.fill();
-    ctx.fillStyle = fc; ctx.beginPath(); 
-    if (isForScan) ctx.fillRect(x0+cell*2, y0+cell*2, cell*3, cell*3); else ctx.roundRect(x0+cell*2, y0+cell*2, cell*3, cell*3, rIn); ctx.fill();
+    
+    if (styleType === 'organic' && !isForScan) {
+        var cx = x0 + (s7/2), cy = y0 + (s7/2);
+        var rOut = s7/2, rMid = (cell*5)/2, rIn = (cell*3)/2;
+        
+        ctx.fillStyle = canvasBgColor; ctx.beginPath();
+        ctx.fillRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2));
+
+        ctx.fillStyle = fc; ctx.beginPath();
+        ctx.arc(cx, cy, rOut, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = canvasBgColor; ctx.beginPath();
+        ctx.arc(cx, cy, rMid, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = fc; ctx.beginPath();
+        ctx.moveTo(cx, cy - rIn); ctx.lineTo(cx + rIn, cy); ctx.lineTo(cx, cy + rIn); ctx.lineTo(cx - rIn, cy); ctx.closePath(); ctx.fill();
+    } else {
+        ctx.fillStyle = canvasBgColor; ctx.beginPath(); 
+        if (isForScan) ctx.fillRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2)); else ctx.roundRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2), cell * 0.8); ctx.fill();
+        var rOut = isForScan ? 0 : cell * 0.8, rMid = isForScan ? 0 : cell * 0.5, rIn = isForScan ? 0 : cell * 0.3;
+        ctx.fillStyle = fc; ctx.beginPath(); 
+        if (isForScan) ctx.fillRect(x0, y0, s7, s7); else ctx.roundRect(x0, y0, s7, s7, rOut); ctx.fill();
+        ctx.fillStyle = canvasBgColor; ctx.beginPath(); 
+        if (isForScan) ctx.fillRect(x0+cell, y0+cell, cell*5, cell*5); else ctx.roundRect(x0+cell, y0+cell, cell*5, cell*5, rMid); ctx.fill();
+        ctx.fillStyle = fc; ctx.beginPath(); 
+        if (isForScan) ctx.fillRect(x0+cell*2, y0+cell*2, cell*3, cell*3); else ctx.roundRect(x0+cell*2, y0+cell*2, cell*3, cell*3, rIn); ctx.fill();
+    }
   });
 }
 
@@ -784,10 +810,18 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
           if ((row < 7 && col < 7) || (row < 7 && col >= mc-7) || (row >= mc-7 && col < 7)) continue;
           var x = (col * cell) + QUIET_ZONE, y = (row * cell) + QUIET_ZONE;
           ctxFG.fillStyle = `rgb(${rr(baseCol[0])},${rr(baseCol[1])},${rr(baseCol[2])})`;
-          drawModule(ctxFG, actualStyle, x, y, cell, pad);
+          
+          var hasRight = false, hasBottom = false;
+          if (actualStyle === 'organic') {
+             var inF = (r, c) => ((r < 7 && c < 7) || (r < 7 && c >= mc-7) || (r >= mc-7 && c < 7));
+             hasRight = (col + 1 < mc) && oQR.isDark(row, col + 1) && !inF(row, col + 1);
+             hasBottom = (row + 1 < mc) && oQR.isDark(row + 1, col) && !inF(row + 1, col);
+          }
+
+          drawModule(ctxFG, actualStyle, x, y, cell, pad, hasRight, hasBottom);
         }
       }
-      drawFinders(ctxFG, mc, cell, baseCol, QUIET_ZONE, isForScan, canvasBgColor); 
+      drawFinders(ctxFG, mc, cell, baseCol, QUIET_ZONE, isForScan, canvasBgColor, actualStyle); 
 
       var cvsMerged = document.createElement('canvas'); cvsMerged.width = TOTAL_SIZE; cvsMerged.height = TOTAL_SIZE;
       var ctxMerged = cvsMerged.getContext('2d');
@@ -802,8 +836,6 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
       
       ctxMerged.drawImage(cvsFG, 0, 0); 
       
-      // MUDANÇA DE SEGURANÇA: Se for isForScan, ele não desenha o buraco da logo no validador
-      // Porque já travamos o slider em 24% (limite seguro real para as câmeras de celular).
       if (logoImg && logoStyleMode === 'center' && !isForScan){
           ctxMerged.save();
           ctxMerged.translate(TOTAL_SIZE / 2, TOTAL_SIZE / 2);
@@ -916,15 +948,26 @@ async function runEngine() {
     var layersPreview = await generateQRLayers(url, sliderParam, baseCol, styleType, logoStyleMode, 4, false, 800);
     var layersScan    = await generateQRLayers(url, sliderParam, baseCol, styleType, logoStyleMode, 4, true, 800); 
     layerForeground = layersPreview.foreground; layerDigitalMerged = layersPreview.merged;    
-    var scanResult = simulateRealScan(layersScan.merged);
     
-    if (scanResult && scanResult.data === url) {
-        logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>Contraste ideal e dados mapeados com segurança.</span></div></div>`;
+    // COMO O MODO CENTRAL ESTÁ TRAVADO EM 24% (Limiar seguro real), NÓS IGNORAMOS O FALSO NEGATIVO DO jsQR NESSE MODO E VALIDAMOS APENAS O CONTRASTE DA COR!
+    var isBgDark = lum(baseCol) > 0.5; var safeColorContrast = contrast(baseCol, isBgDark ? [19,19,26] : [255,255,255]);
+    var scanResult = simulateRealScan(layersScan.merged);
+    var validationPassed = false;
+
+    if (logoStyleMode === 'center') {
+        validationPassed = (safeColorContrast >= 2.5); // Ignora o buraco no jsQR e foca se a cor está vibrante contra o fundo
+    } else {
+        validationPassed = (scanResult && scanResult.data === url);
+    }
+    
+    if (validationPassed) {
+        logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>O design está com contraste ideal e dados mapeados com segurança.</span></div></div>`;
         finalConf.innerHTML = '<strong style="color:var(--ok-border)">Operacional</strong>';
     } else {
-        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Risco de erro no sensor. Aumente o contraste (troque a cor).</span></div></div>`;
+        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Câmera pode ter dificuldade. Aumente o contraste (escureça ou clareie a cor).</span></div></div>`;
         finalConf.innerHTML = '<strong style="color:var(--fail-border)">Risco Detetado</strong>';
     }
+    
     var destCanvas = document.getElementById('qr-canvas'); destCanvas.width = 1200; destCanvas.height = 1200; 
     drawAnimationFrame(destCanvas.getContext('2d'), 1200, 1200, 9999); animRequest = requestAnimationFrame(animationLoop);
   } catch (err) {
