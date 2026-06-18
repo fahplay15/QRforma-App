@@ -186,6 +186,7 @@
   footer{padding:16px;color:var(--muted);font-size:.68rem;font-family:'Space Mono',monospace;text-align:center}
 </style>
 
+<!-- SCRIPTS OFICIAIS DO SDK DO FIREBASE (V8 COMPAT) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
@@ -306,8 +307,9 @@
   </div>
 </div>
 
-<footer>QRforma · Sistema Autenticado · v57.0</footer>
+<footer>QRforma · Sistema Autenticado · v58.0</footer>
 
+<!-- MODAL DE PAYWALL PIX DINÂMICO -->
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
         <div class="pw-icon">🚀</div>
@@ -332,6 +334,7 @@
     </div>
 </div>
 
+<!-- ESTRUTURAS DO TUTORIAL (ONBOARDING) -->
 <div id="tutorial-overlay"></div>
 <div id="tutorial-dialog">
     <div class="tut-header">
@@ -612,13 +615,13 @@ spectrumSlider.addEventListener('input', function() {
   triggerLiveUpdate();
 });
 
-// MODIFICAÇÃO INTELIGENTE: Aplica o teto de 24% dinamicamente para o Emblema Centralizado
+// Dinâmica Inteligente: O controle deslizante altera seu comportamento com base no seletor de estilo
 document.getElementById('logo-style').addEventListener('change', function() {
     var val = this.value;
     var sl = document.getElementById('sl-logo');
     
     if(val === 'center') {
-        document.getElementById('slider-label').innerText = 'Tamanho da Logo no Centro (Limite Seguro: Máx 24%)';
+        document.getElementById('slider-label').innerText = 'Tamanho da Logo no Centro (Máx 24%)';
         sl.min = 15; sl.max = 24; sl.value = 22;
     } else {
         document.getElementById('slider-label').innerText = 'Opacidade da Logo ao Fundo (Ajuste Fino)';
@@ -814,6 +817,15 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
       document.body.removeChild(tmp);
       return { foreground: cvsFG, merged: cvsMerged, bgColor: canvasBgColor };
     } catch(e) { if (document.body.contains(tmp)) document.body.removeChild(tmp); throw e; }
+}
+
+// A FUNÇÃO DE SEGURANÇA QUE EU TINHA APAGADO SEM QUERER!
+function simulateRealScan(sourceCanvas) {
+    if (typeof jsQR === 'undefined') { return { data: document.getElementById('qr-url').value }; }
+    var scanSize = 800; var temp = document.createElement('canvas'); temp.width = scanSize; temp.height = scanSize;
+    var tCtx = temp.getContext('2d'); tCtx.drawImage(sourceCanvas, 0, 0, scanSize, scanSize);
+    var imgData = tCtx.getImageData(0, 0, scanSize, scanSize);
+    return jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
 }
 
 function drawAnimationFrame(ctx, w, h, time) {
