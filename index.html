@@ -300,7 +300,7 @@
   </div>
 </div>
 
-<footer>QRforma · Sistema Autenticado · v51.0</footer>
+<footer>QRforma · Sistema Autenticado · v52.0</footer>
 
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
@@ -343,7 +343,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
-// --- CONFIGURAÇÃO MANUAL DO SEU FIREBASE (ATUALIZADA) ---
+// --- CONFIGURAÇÃO COM AS SUAS CHAVES DO FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyCvoqjWxpYPwJV26p9DyJAy1ziQashw8Ug",
   authDomain: "qrforma-31471.firebaseapp.com",
@@ -361,6 +361,22 @@ let currentUserToken = null;
 let currentUserEmail = null;
 let isPremiumUser = false;
 let checkInterval = null;
+
+// Intercepta a volta do Google após o redirecionamento (Para Celulares)
+auth.getRedirectResult().catch(err => {
+    console.error("Erro no redirecionamento: ", err);
+    alert("Erro ao finalizar o login. Tente novamente.");
+});
+
+// Ações de clique de Login e Logout
+document.getElementById('btn-login-google').addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithRedirect(provider); // Usa Redirect em vez de Popup para evitar erro em mobile
+});
+
+document.getElementById('btn-logout-google').addEventListener('click', () => {
+    auth.signOut().then(() => window.location.reload());
+});
 
 // Observador de estado de login
 auth.onAuthStateChanged(async (user) => {
@@ -388,24 +404,6 @@ auth.onAuthStateChanged(async (user) => {
         
         applyBlurIfLimitReached();
     }
-});
-
-// --- SISTEMA DE LOGIN OTIMIZADO PARA CELULAR ---
-
-// 1. Intercepta a volta do Google após o redirecionamento
-auth.getRedirectResult().catch(err => {
-    console.error("Erro no redirecionamento: ", err);
-    alert("Erro ao finalizar o login. Tente novamente.");
-});
-
-// 2. Ação do clique: Usa Redirect em vez de Popup
-document.getElementById('btn-login-google').addEventListener('click', () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithRedirect(provider);
-});
-
-document.getElementById('btn-logout-google').addEventListener('click', () => {
-    auth.signOut().then(() => window.location.reload());
 });
 
 async function verifyExistingAccess() {
