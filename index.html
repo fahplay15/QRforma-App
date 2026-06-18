@@ -362,23 +362,39 @@ let currentUserEmail = null;
 let isPremiumUser = false;
 let checkInterval = null;
 
-// Intercepta a volta do Google após o redirecionamento (Para Celulares)
-auth.getRedirectResult().catch(err => {
-    console.error("Erro no redirecionamento: ", err);
-    alert("Erro ao finalizar o login. Tente novamente.");
-});
+// CORREÇÃO: Escuta e captura de forma agressiva o retorno do login com tratamento de erro CORS/Domínio
+auth.getRedirectResult()
+    .then((result) => {
+        if (result.user) {
+            console.log("Login resgatado com sucesso via redirect:", result.user.email);
+        }
+    })
+    .catch(err => {
+        console.error("Erro técnico no redirecionamento: ", err);
+        // ALERTA INTELIGENTE: Se der erro de domínio não autorizado, avisa o desenvolvedor na hora
+        if (err.code === "auth/unauthorized-domain") {
+            alert("⚠️ ERRO DE CONFIGURAÇÃO:\nVocê esqueceu de adicionar o link 'q-rforma-app.vercel.app' nos Domínios Autorizados dentro do console do seu Firebase Auth.");
+        } else {
+            alert("Erro de autenticação ao retornar do Google: " + err.message);
+        }
+    });
 
 // Ações de clique de Login e Logout
 document.getElementById('btn-login-google').addEventListener('click', () => {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithRedirect(provider); // Usa Redirect em vez de Popup para evitar erro em mobile
+    // Força o escopo padrão de email
+    provider.addScope('email');
+    auth.signInWithRedirect(provider); 
 });
 
 document.getElementById('btn-logout-google').addEventListener('click', () => {
-    auth.signOut().then(() => window.location.reload());
+    auth.signOut().then(() => {
+        localStorage.removeItem('qrforma_free_downloads');
+        window.location.reload();
+    });
 });
 
-// Observador de estado de login
+// Observador de estado de login estável
 auth.onAuthStateChanged(async (user) => {
     const loginBtn = document.getElementById('btn-login-google');
     const loggedBox = document.getElementById('user-logged-box');
@@ -386,7 +402,7 @@ auth.onAuthStateChanged(async (user) => {
     
     if (user) {
         currentUserEmail = user.email;
-        currentUserToken = await user.getIdToken(); 
+        currentUserToken = await user.getIdToken(true); // Força atualização do token JWT
         
         emailDisplay.innerText = user.email;
         loginBtn.style.display = 'none';
@@ -679,6 +695,9 @@ document.getElementById('btn-clear').addEventListener('click', function(){
   document.getElementById('logo-preview-wrap').style.display = 'none'; triggerLiveUpdate();
 });
 
+// Força a renderização inicial do motor
+setTimeout(() => { triggerLiveUpdate(); }, 300);
+
 function renderPalette(){
   var cont = document.getElementById('palette-swatches'); cont.innerHTML = '';
   palette.forEach((c, i) => {
@@ -842,131 +861,6 @@ async function runEngine() {
 }
 
 function triggerLiveUpdate() { clearTimeout(liveUpdateTimer); liveUpdateTimer = setTimeout(() => { runEngine(); }, 250); }
-
-document.getElementById('qr-url').addEventListener('input', triggerLiveUpdate);
-document.getElementById('qr-style').addEventListener('change', triggerLiveUpdate);
-document.getElementById('sl-logo').addEventListener('input', triggerLiveUpdate);
-
-document.getElementById('btn-png-digital').onclick = function(){
-  if (isPremiumUser) {
-    var a = document.createElement('a');
-    a.download = 'QRforma-Digital.png';
-    a.href = layerDigitalMerged.toDataURL();
-    a.click();
-    return;
-  }
-
-  if (applyBlurIfLimitReached()) {
-    triggerPaywallFlow();
-    return;
-  }
-
-  var a = document.createElement('a');
-  a.download = 'QRforma-Digital.png';
-  a.href = layerDigitalMerged.toDataURL();
-  a.click();
-
-  let freeDownloads = parseInt(localStorage.getItem('qrforma_free_downloads') || '0');
-  freeDownloads++;
-  localStorage.setItem('qrforma_free_downloads', freeDownloads);
-
-  let restam = 3 - freeDownloads;
-  if (restam > 0) {
-    alert(`Download concluído! Você ainda tem ${restam} ${restam === 1 ? 'download gratuito disponível' : 'downloads gratuitos disponíveis'}.`);
-  } else {
-    alert("Atenção: Este foi o seu último download gratuito.");
-    applyBlurIfLimitReached(); 
-  }
-};
-
-document.getElementById('btn-png-print').onclick = async function(){
-  if (!isPremiumUser) { triggerPaywallFlow(); return; }
-  
-  var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando 4K...";
-  try {
-    var l = await generateQRLayers(document.getElementById('qr-url').value, parseInt(document.getElementById('sl-logo').value) / 100, currentActiveColor, document.getElementById('qr-style').value, 4, false, 2048);
-    var a = document.createElement('a'); a.download = 'QRforma-Impressao-4K.png'; a.href = l.merged.toDataURL('image/png'); a.click();
-  } catch(e) { alert("Erro ao gerar arquivo: " + e.message); }
-  btn.innerText = oldTxt;
-};
-
-document.getElementById('btn-dl-video').addEventListener('click', async function(){
-  if (!isPremiumUser) { triggerPaywallFlow(); return; }
-
-  document.getElementById('loader-video').style.display = 'flex';
-  var vCanvas = document.createElement('canvas'); vCanvas.width = 1080; vCanvas.height = 1080; var vCtx = vCanvas.getContext('2d');
-  
-  var tempHighRes = await generateQRLayers(document.getElementById('qr-url').value, parseInt(document.getElementById('sl-logo').value) / 100, currentActiveColor, document.getElementById('qr-style').value, 4, false, 1080);
-  var oldForeground = layerForeground; layerForeground = tempHighRes.foreground;
-  
-  var stream = vCanvas.captureStream(60); var recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }); var chunks = [];
-  recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
-  recorder.onstop = () => {
-      var blob = new Blob(chunks, { type: 'video/webm' }); var url = URL.createObjectURL(blob);
-      var a = document.createElement('a'); a.href = url; a.download = 'QRforma-Motion-10s-60fps.webm'; a.click();
-      document.getElementById('loader-video').style.display = 'none'; layerForeground = oldForeground; 
-  };
-  
-  recorder.start(); var totalDur = 10000; var fps = 60; var frameTime = 1000 / fps;
-  for(let t = 0; t <= totalDur; t += frameTime) {
-      drawAnimationFrame(vCtx, vCanvas.width, vCanvas.height, t); await new Promise(r => setTimeout(r, frameTime)); 
-  }
-  recorder.stop();
-});
-
-var pixAnimReq = null;
-var pixLogo = new Image();
-pixLogo.src = 'LogoQRforma.png'; 
-
-async function animatePixQR(pixText) {
-    var canvas = document.getElementById('canvas-qr-pix');
-    var ctx = canvas.getContext('2d');
-    canvas.width = 800; canvas.height = 800;
-    
-    if (!pixLogo.complete) { await new Promise(r => pixLogo.onload = r); }
-    
-    var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 4, true, 800, QRCode.CorrectLevel.L);
-    var pixLayer = l.foreground;
-    
-    var startTime = performance.now();
-    
-    function loop(now) {
-        var t = (now - startTime) % 10000; 
-        var w = 800, h = 800, cx = 400, cy = 400;
-        var logoW = 500; 
-        
-        ctx.fillStyle = '#13131a';
-        ctx.fillRect(0, 0, w, h);
-        
-        if (t <= 1500) { 
-            let p = easeOutCubic(Math.min(t / 1000, 1)); 
-            ctx.globalAlpha = p; 
-            ctx.save(); ctx.translate(cx, cy); let s = 0.8 + (0.2 * p); ctx.scale(s, s); 
-            drawLogoContained(ctx, pixLogo, -logoW/2, -logoW/2, logoW, logoW); 
-            ctx.restore();
-        } else if (t <= 2200) { 
-            let p = easeInOutCubic((t - 1500) / 700);
-            
-            ctx.save(); ctx.globalAlpha = 1 - p; ctx.filter = `blur(${p * 20}px)`; 
-            ctx.translate(cx, cy); let ls = 1.0 + (0.3 * p); ctx.scale(ls, ls);
-            drawLogoContained(ctx, pixLogo, -logoW/2, -logoW/2, logoW, logoW); 
-            ctx.restore();
-            
-            ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; 
-            ctx.translate(cx, cy); let qs = 0.8 + (0.2 * p); ctx.scale(qs, qs);
-            ctx.drawImage(pixLayer, -w/2, -h/2, w, h); 
-            ctx.restore();
-        } else { 
-            ctx.globalAlpha = 1.0; 
-            ctx.filter = 'none';
-            ctx.drawImage(pixLayer, 0, 0, w, h);
-        }
-        pixAnimReq = requestAnimationFrame(loop);
-    }
-    
-    if(pixAnimReq) cancelAnimationFrame(pixAnimReq);
-    pixAnimReq = requestAnimationFrame(loop);
-}
 </script>
 </body>
 </html>
