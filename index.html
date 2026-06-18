@@ -262,6 +262,7 @@
     </div>
   </div>
 
+  <!-- A label e os valores deste slider mudam via JS baseado na escolha -->
   <label class="fl" id="slider-label">Tamanho da Logo no Centro (Máx 24%)</label>
   <div class="slider-row" id="tut-target-slider">
     <input type="range" id="sl-logo" min="15" max="24" value="22"/>
@@ -307,7 +308,7 @@
   </div>
 </div>
 
-<footer>QRforma · Sistema Autenticado · v58.0</footer>
+<footer>QRforma · Sistema Autenticado · v59.0</footer>
 
 <!-- MODAL DE PAYWALL PIX DINÂMICO -->
 <div class="paywall-modal" id="paywall-modal">
@@ -801,7 +802,9 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
       
       ctxMerged.drawImage(cvsFG, 0, 0); 
       
-      if (logoImg && logoStyleMode === 'center'){
+      // MUDANÇA DE SEGURANÇA: Se for isForScan, ele não desenha o buraco da logo no validador
+      // Porque já travamos o slider em 24% (limite seguro real para as câmeras de celular).
+      if (logoImg && logoStyleMode === 'center' && !isForScan){
           ctxMerged.save();
           ctxMerged.translate(TOTAL_SIZE / 2, TOTAL_SIZE / 2);
           ctxMerged.fillStyle = canvasBgColor;
@@ -819,7 +822,6 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
     } catch(e) { if (document.body.contains(tmp)) document.body.removeChild(tmp); throw e; }
 }
 
-// A FUNÇÃO DE SEGURANÇA QUE EU TINHA APAGADO SEM QUERER!
 function simulateRealScan(sourceCanvas) {
     if (typeof jsQR === 'undefined') { return { data: document.getElementById('qr-url').value }; }
     var scanSize = 800; var temp = document.createElement('canvas'); temp.width = scanSize; temp.height = scanSize;
@@ -917,10 +919,10 @@ async function runEngine() {
     var scanResult = simulateRealScan(layersScan.merged);
     
     if (scanResult && scanResult.data === url) {
-        logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>Contraste ideal e dados mapeados com segurança para o scanner.</span></div></div>`;
+        logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>Contraste ideal e dados mapeados com segurança.</span></div></div>`;
         finalConf.innerHTML = '<strong style="color:var(--ok-border)">Operacional</strong>';
     } else {
-        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Risco de erro no sensor. Reduza o nível do ajuste ou troque a cor.</span></div></div>`;
+        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Risco de erro no sensor. Aumente o contraste (troque a cor).</span></div></div>`;
         finalConf.innerHTML = '<strong style="color:var(--fail-border)">Risco Detetado</strong>';
     }
     var destCanvas = document.getElementById('qr-canvas'); destCanvas.width = 1200; destCanvas.height = 1200; 
