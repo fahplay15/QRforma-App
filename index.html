@@ -20,6 +20,13 @@
   body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center; overflow-x:hidden;}
   header{width:100%;padding:20px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
   
+  .header-user-zone { display: flex; align-items: center; gap: 12px; }
+  .btn-google-login { background: #fff; color: #13131a; border: none; padding: 8px 14px; border-radius: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: opacity 0.2s; }
+  .btn-google-login:hover { opacity: 0.9; }
+  .user-logged-box { display: flex; align-items: center; gap: 10px; font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+  .btn-logout { background: none; border: 1px solid var(--border); color: var(--fail-text); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; font-family: 'Space Grotesk', sans-serif; }
+  .btn-logout:hover { background: var(--fail-bg); }
+
   .badge{font-size:.65rem;font-family:'Space Mono',monospace;color:var(--accent2);border:1px solid var(--accent);padding:3px 10px;border-radius:20px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
   
   .hero{max-width:620px;width:100%;padding:40px 20px 24px;text-align:center}
@@ -102,7 +109,7 @@
   .lock-icon { font-size: 2.5rem; margin-bottom: 8px; }
   #lock-overlay h3 { font-size: 1.2rem; margin-bottom: 6px; color: var(--warn-text); }
   #lock-overlay p { font-size: 0.85rem; color: #ddd; line-height: 1.4; }
-  .btn-unlock-small { margin-top: 15px; background: linear-gradient(135deg, var(--accent2), #ec4899); border: none; color: #fff; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
+  .btn-unlock-small { margin-top: 15px; background: linear-gradient(135deg, var(--accent2), #ec4899); border: none; color: #fff; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; }
   
   .result-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:9px;font-size:.78rem;color:var(--muted);font-family:'Space Mono',monospace; flex-wrap: wrap; gap: 6px;}
   
@@ -160,7 +167,6 @@
   @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
   .pix-waiting { animation: pulse 1.5s infinite; }
 
-  /* ESTILOS DO NOVO TOUR DE TUTORIAL */
   #tutorial-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(3px); z-index: 9000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   #tutorial-overlay.active { opacity: 1; pointer-events: all; }
   
@@ -179,6 +185,9 @@
 
   footer{padding:16px;color:var(--muted);font-size:.68rem;font-family:'Space Mono',monospace;text-align:center}
 </style>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body>
 
@@ -186,7 +195,18 @@
   <div class="logo">
     <img src="LogoQRforma.png" alt="Logo QRforma" style="height: 52px; width: auto; border-radius: 8px; object-fit: contain;">
   </div>
-  <span class="badge" id="pro-badge" style="display:none; border-color:#ec4899; color:#ec4899;">👑 Assinante Pro</span>
+  
+  <div class="header-user-zone">
+    <button class="btn-google-login" id="btn-login-google">
+      <svg style="width:16px; height:16px" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.53-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-8.82z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.74-2.11-6.68-4.96H1.21v3.15C3.18 21.88 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.32 14.24A7.16 7.16 0 0 1 4.91 12c0-.79.13-1.57.41-2.24V6.61H1.21A11.94 11.94 0 0 0 0 12c0 1.92.45 3.74 1.21 5.39l4.11-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.18 2.12 1.21 5.39l4.11 3.15c.94-2.85 3.57-4.96 6.68-4.96z"/></svg>
+      Entrar com Google
+    </button>
+    <div class="user-logged-box" id="user-logged-box" style="display:none;">
+      <span class="badge" id="pro-badge" style="display:none; border-color:#ec4899; color:#ec4899;">👑 PRO</span>
+      <span id="user-email-display"></span>
+      <button class="btn-logout" id="btn-logout-google">Sair</button>
+    </div>
+  </div>
 </header>
 
 <div class="hero">
@@ -260,7 +280,7 @@
       <div class="lock-icon">🔒</div>
       <h3>Teste Grátis Esgotado</h3>
       <p>Você atingiu o limite de 3 arquivos visuais.<br>Libere a versão PRO para uso ilimitado.</p>
-      <button class="btn-unlock-small" onclick="document.getElementById('paywall-modal').classList.add('active')">Desbloquear Agora</button>
+      <button class="btn-unlock-small" onclick="triggerPaywallFlow()">Desbloquear Agora</button>
     </div>
 
     <canvas id="qr-canvas"></canvas>
@@ -280,7 +300,7 @@
   </div>
 </div>
 
-<footer>QRforma · Acesso Pro · v50.0</footer>
+<footer>QRforma · Sistema Autenticado · v51.0</footer>
 
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
@@ -293,8 +313,6 @@
             <li>✅ <strong>Vídeos Fluidos 60FPS</strong> para Telões e Instagram</li>
             <li>✅ <strong>Arquivos em 4K</strong> (Borda segura de 4 módulos) para Gráficas</li>
         </ul>
-
-        <input type="email" id="cliente-email" placeholder="Digite seu melhor e-mail" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif;" required />
 
         <button class="btn-buy" id="btn-gerar-pix">Gerar PIX para Liberar (R$ 19,90)</button>
         
@@ -325,6 +343,158 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
+// --- CONFIGURAÇÃO MANUAL DO SEU FIREBASE (ATUALIZADA) ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCvoqjWxpYPwJV26p9DyJAy1ziQashw8Ug",
+  authDomain: "qrforma-31471.firebaseapp.com",
+  projectId: "qrforma-31471",
+  storageBucket: "qrforma-31471.firebasestorage.app",
+  messagingSenderId: "1061901922718",
+  appId: "1:1061901922718:web:340ff68eb023ef4148668f",
+  measurementId: "G-E611VVLDWD"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// --- ESTADO GLOBAL DE AUTENTICAÇÃO E PERMISSÃO ---
+let currentUserToken = null;
+let currentUserEmail = null;
+let isPremiumUser = false;
+let checkInterval = null;
+
+// Observador de estado de login
+auth.onAuthStateChanged(async (user) => {
+    const loginBtn = document.getElementById('btn-login-google');
+    const loggedBox = document.getElementById('user-logged-box');
+    const emailDisplay = document.getElementById('user-email-display');
+    
+    if (user) {
+        currentUserEmail = user.email;
+        currentUserToken = await user.getIdToken(); 
+        
+        emailDisplay.innerText = user.email;
+        loginBtn.style.display = 'none';
+        loggedBox.style.display = 'flex';
+        
+        await verifyExistingAccess();
+    } else {
+        currentUserToken = null;
+        currentUserEmail = null;
+        isPremiumUser = false;
+        
+        loginBtn.style.display = 'flex';
+        loggedBox.style.display = 'none';
+        document.getElementById('pro-badge').style.display = 'none';
+        
+        applyBlurIfLimitReached();
+    }
+});
+
+// Ações de clique de Login e Logout
+document.getElementById('btn-login-google').addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(err => alert("Erro ao fazer login: " + err.message));
+});
+
+document.getElementById('btn-logout-google').addEventListener('click', () => {
+    auth.signOut().then(() => window.location.reload());
+});
+
+async function verifyExistingAccess() {
+    if (!currentUserToken) return;
+    try {
+        const checkRes = await fetch(`/api/checar-pagamento`, {
+            headers: { 'Authorization': `Bearer ${currentUserToken}` }
+        });
+        const checkData = await checkRes.json();
+        if (checkData.status === "pago") { 
+            unlockProFeatures(); 
+        } else {
+            applyBlurIfLimitReached();
+        }
+    } catch(e) { applyBlurIfLimitReached(); }
+}
+
+function unlockProFeatures() {
+    isPremiumUser = true;
+    document.getElementById('pro-badge').style.display = 'flex';
+    document.getElementById('lock-overlay').classList.remove('active');
+    
+    let btnPrint = document.getElementById('btn-png-print');
+    btnPrint.innerHTML = '⬇ Imprimir 4K (Liberado)';
+    btnPrint.classList.remove('btn-pro');
+    btnPrint.classList.add('btn-dl-print');
+    
+    let btnVideo = document.getElementById('btn-dl-video');
+    btnVideo.innerHTML = '🎬 Baixar Vídeo 60FPS (Liberado)';
+    btnVideo.classList.remove('btn-pro');
+    
+    let btnDigital = document.getElementById('btn-png-digital');
+    btnDigital.classList.remove('locked');
+    btnDigital.innerHTML = '⬇ Tela Digital (Ilimitado)';
+    
+    document.getElementById('paywall-modal').classList.remove('active');
+    if (checkInterval) clearInterval(checkInterval);
+}
+
+function triggerPaywallFlow() {
+    if (!auth.currentUser) {
+        alert("Por favor, faça login com o Google no topo da página antes de assinar a versão PRO.");
+        return;
+    }
+    document.getElementById('paywall-modal').classList.add('active');
+}
+
+document.getElementById('btn-gerar-pix').addEventListener('click', async function() {
+    if (!currentUserToken) {
+        alert("Você precisa estar logado para processar o pagamento.");
+        return;
+    }
+    var btn = this;
+    btn.innerText = "⏳ Gerando PIX seguro...";
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/gerar-pix', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentUserToken}`
+            }
+        });
+        
+        if (!res.ok) throw new Error("Falha ao se comunicar com o servidor");
+        const pixData = await res.json();
+
+        document.getElementById('input-copia-cola').value = pixData.qr_code;
+        animatePixQR(pixData.qr_code); 
+        
+        btn.style.display = 'none';
+        document.getElementById('area-pix').style.display = 'block';
+
+        checkInterval = setInterval(async () => {
+            try {
+                const checkRes = await fetch(`/api/checar-pagamento`, {
+                    headers: { 'Authorization': `Bearer ${currentUserToken}` }
+                });
+                const checkData = await checkRes.json();
+                
+                if (checkData.status === "pago") {
+                    clearInterval(checkInterval);
+                    unlockProFeatures();
+                    alert("✅ Pagamento aprovado! O QRforma Pro foi desbloqueado com sucesso.");
+                }
+            } catch (err) { }
+        }, 4000);
+
+    } catch (e) {
+        alert("Ocorreu um erro ao gerar o pagamento. Tente novamente mais tarde.");
+        btn.innerText = "Gerar PIX para Liberar (R$ 19,90)";
+        btn.disabled = false;
+    }
+});
+
+
 // --- SISTEMA DE ONBOARDING (TUTORIAL) ---
 const tutorialSteps = [
     { target: 'qr-url', title: '🔗 Destino do QR Code', desc: 'Cole aqui o link para onde o seu cliente vai ao escanear (ex: Instagram, Cardápio, WhatsApp).' },
@@ -338,7 +508,6 @@ let currentTutStep = -1;
 
 function showTutorialStep(stepIndex) {
     document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
-    
     const dialog = document.getElementById('tutorial-dialog');
     
     if (stepIndex >= tutorialSteps.length) {
@@ -355,7 +524,6 @@ function showTutorialStep(stepIndex) {
     
     if (targetEl) {
         targetEl.classList.add('tut-highlight');
-        
         if (step.target === 'download-actions') {
             dialog.style.bottom = 'auto';
             dialog.style.top = '30px'; 
@@ -389,27 +557,12 @@ window.addEventListener('load', () => {
 });
 
 
-function getOrGenerateToken() {
-  let token = localStorage.getItem('qrforma_token');
-  if (!token) {
-    token = 'qrforma_' + Math.random().toString(36).substring(2, 12);
-    localStorage.setItem('qrforma_token', token);
-  }
-  return token;
-}
-var clientToken = getOrGenerateToken();
-var isPremiumUser = false;
-var checkInterval = null;
-
+// --- ENGINE DE RENDERIZAÇÃO VISUAL ---
 function applyBlurIfLimitReached() {
     if (isPremiumUser) {
         document.getElementById('lock-overlay').classList.remove('active');
-        let btnDigital = document.getElementById('btn-png-digital');
-        btnDigital.classList.remove('locked');
-        btnDigital.innerHTML = '⬇ Tela Digital (Ilimitado)';
         return false;
     }
-    
     let freeDownloads = parseInt(localStorage.getItem('qrforma_free_downloads') || '0');
     if (freeDownloads >= 3) {
         document.getElementById('lock-overlay').classList.add('active');
@@ -420,85 +573,6 @@ function applyBlurIfLimitReached() {
     }
     return false;
 }
-
-async function verifyExistingAccess() {
-    try {
-        const checkRes = await fetch(`/api/checar-pagamento?token=${clientToken}`);
-        const checkData = await checkRes.json();
-        if (checkData.status === "pago") { 
-            unlockProFeatures(); 
-        } else {
-            applyBlurIfLimitReached();
-        }
-    } catch(e) { applyBlurIfLimitReached(); }
-}
-verifyExistingAccess();
-
-function unlockProFeatures() {
-    isPremiumUser = true;
-    document.getElementById('pro-badge').style.display = 'flex';
-    
-    let btnPrint = document.getElementById('btn-png-print');
-    btnPrint.innerHTML = '⬇ Imprimir 4K (Liberado)';
-    btnPrint.classList.remove('btn-pro');
-    btnPrint.classList.add('btn-dl-print');
-    
-    let btnVideo = document.getElementById('btn-dl-video');
-    btnVideo.innerHTML = '🎬 Baixar Vídeo 60FPS (Liberado)';
-    btnVideo.classList.remove('btn-pro');
-    
-    document.getElementById('paywall-modal').classList.remove('active');
-    applyBlurIfLimitReached(); 
-    if (checkInterval) clearInterval(checkInterval);
-}
-
-document.getElementById('btn-gerar-pix').addEventListener('click', async function() {
-    var emailCliente = document.getElementById('cliente-email').value;
-    if (!emailCliente || !emailCliente.includes('@')) {
-        alert("Por favor, digite um e-mail válido para vincular sua conta PRO.");
-        return;
-    }
-
-    var btn = this;
-    btn.innerText = "⏳ Gerando PIX seguro...";
-    btn.disabled = true;
-
-    try {
-        const res = await fetch('/api/gerar-pix', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: clientToken, email: emailCliente }) 
-        });
-        
-        if (!res.ok) throw new Error("Falha ao se comunicar com o servidor");
-        const pixData = await res.json();
-
-        document.getElementById('input-copia-cola').value = pixData.qr_code;
-        animatePixQR(pixData.qr_code); 
-        
-        btn.style.display = 'none';
-        document.getElementById('cliente-email').style.display = 'none';
-        document.getElementById('area-pix').style.display = 'block';
-
-        checkInterval = setInterval(async () => {
-            try {
-                const checkRes = await fetch(`/api/checar-pagamento?token=${clientToken}`);
-                const checkData = await checkRes.json();
-                
-                if (checkData.status === "pago") {
-                    clearInterval(checkInterval);
-                    unlockProFeatures();
-                    alert("✅ Pagamento aprovado! O QRforma Pro foi desbloqueado com sucesso.");
-                }
-            } catch (err) { }
-        }, 4000);
-
-    } catch (e) {
-        alert("Ocorreu um erro ao gerar o pagamento. Tente novamente mais tarde.");
-        btn.innerText = "Gerar PIX para Liberar (R$ 19,90)";
-        btn.disabled = false;
-    }
-});
 
 var logoImg = null;
 var palette = [[15, 15, 15], [242, 242, 242]]; 
@@ -596,7 +670,7 @@ document.getElementById('logo-input').addEventListener('change', function(e){
 });
 document.getElementById('btn-clear').addEventListener('click', function(){
   logoImg = null; document.getElementById('logo-input').value = '';
-  document.getElementById('logo-preview-wrap').style.none = 'none'; triggerLiveUpdate();
+  document.getElementById('logo-preview-wrap').style.display = 'none'; triggerLiveUpdate();
 });
 
 function renderPalette(){
@@ -777,7 +851,7 @@ document.getElementById('btn-png-digital').onclick = function(){
   }
 
   if (applyBlurIfLimitReached()) {
-    document.getElementById('paywall-modal').classList.add('active');
+    triggerPaywallFlow();
     return;
   }
 
@@ -799,9 +873,8 @@ document.getElementById('btn-png-digital').onclick = function(){
   }
 };
 
-// CORREÇÃO: Margem do 4K alterada de 2 para 4 (Padrão ISO 18004)
 document.getElementById('btn-png-print').onclick = async function(){
-  if (!isPremiumUser) { document.getElementById('paywall-modal').classList.add('active'); return; }
+  if (!isPremiumUser) { triggerPaywallFlow(); return; }
   
   var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando 4K...";
   try {
@@ -812,7 +885,7 @@ document.getElementById('btn-png-print').onclick = async function(){
 };
 
 document.getElementById('btn-dl-video').addEventListener('click', async function(){
-  if (!isPremiumUser) { document.getElementById('paywall-modal').classList.add('active'); return; }
+  if (!isPremiumUser) { triggerPaywallFlow(); return; }
 
   document.getElementById('loader-video').style.display = 'flex';
   var vCanvas = document.createElement('canvas'); vCanvas.width = 1080; vCanvas.height = 1080; var vCtx = vCanvas.getContext('2d');
@@ -835,7 +908,6 @@ document.getElementById('btn-dl-video').addEventListener('click', async function
   recorder.stop();
 });
 
-// --- MOTOR DE ANIMAÇÃO EXCLUSIVO PARA O PIX DE PAGAMENTO ---
 var pixAnimReq = null;
 var pixLogo = new Image();
 pixLogo.src = 'LogoQRforma.png'; 
