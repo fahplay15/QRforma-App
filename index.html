@@ -696,9 +696,13 @@ async function generateQRLayers(url, logoAlpha, baseCol, styleType, quietZoneMul
 
 function simulateRealScan(sourceCanvas) {
     if (typeof jsQR === 'undefined') { return { data: document.getElementById('qr-url').value }; }
-    var scanSize = 800; var temp = document.createElement('canvas'); temp.width = scanSize; temp.height = scanSize;
-    var tCtx = temp.getContext('2d'); tCtx.drawImage(sourceCanvas, 0, 0, scanSize, scanSize);
-    var imgData = tCtx.getImageData(0, 0, scanSize, scanSize);
+    // Lê os pixels diretamente do canvas final, na resolução nativa em que ele foi desenhado.
+    // Antes, esse canvas era redesenhado forçadamente em 800x800 num canvas intermediário —
+    // esse redimensionamento aplica suavização (blur) automática do navegador, que penaliza
+    // muito mais bordas curvas/diagonais (círculos, diamantes, gotas) do que bordas retas de
+    // quadrado, gerando falsos "risco detectado" que não se repetem numa câmera real.
+    var ctx = sourceCanvas.getContext('2d');
+    var imgData = ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
     return jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
 }
 
