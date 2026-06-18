@@ -390,10 +390,18 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-// Ações de clique de Login e Logout
+// --- SISTEMA DE LOGIN OTIMIZADO PARA CELULAR ---
+
+// 1. Intercepta a volta do Google após o redirecionamento
+auth.getRedirectResult().catch(err => {
+    console.error("Erro no redirecionamento: ", err);
+    alert("Erro ao finalizar o login. Tente novamente.");
+});
+
+// 2. Ação do clique: Usa Redirect em vez de Popup
 document.getElementById('btn-login-google').addEventListener('click', () => {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(err => alert("Erro ao fazer login: " + err.message));
+    auth.signInWithRedirect(provider);
 });
 
 document.getElementById('btn-logout-google').addEventListener('click', () => {
