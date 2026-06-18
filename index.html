@@ -75,7 +75,7 @@
     width: 26px; height: 26px; border-radius: 50%; background: var(--thumb-color); 
     border: 3px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.6); cursor: grab;
   }
-  
+
   .slider-row{display:flex;align-items:center;gap:12px;margin-bottom:20px}
   .slider-row input[type=range]{flex:1;accent-color:var(--accent2);cursor:pointer}
   .slider-val{font-family:'Space Mono',monospace;font-size:.76rem;color:var(--accent2);min-width:34px;text-align:right}
@@ -230,6 +230,12 @@
     <button id="btn-clear">✕ remover</button>
   </div>
 
+  <label class="fl">Posição da Logo (Animação)</label>
+  <select id="logo-style" class="custom-select">
+    <option value="center">🎯 Emblema Central (Encolhe p/ o Meio)</option>
+    <option value="background">👻 Marca d'água (Misturada ao Fundo)</option>
+  </select>
+
   <label class="fl">Estilo dos Pontinhos (Módulos)</label>
   <select id="qr-style" class="custom-select">
     <option value="circle">● Círculos Clássicos</option>
@@ -255,10 +261,10 @@
     </div>
   </div>
 
-  <label class="fl">Opacidade da logo ao fundo (Ajuste Fino)</label>
+  <label class="fl" id="slider-label">Tamanho da Logo no Centro</label>
   <div class="slider-row" id="tut-target-slider">
-    <input type="range" id="sl-logo" min="5" max="80" value="40"/>
-    <span class="slider-val" id="sl-logo-v">40%</span>
+    <input type="range" id="sl-logo" min="15" max="33" value="25"/>
+    <span class="slider-val" id="sl-logo-v">25%</span>
   </div>
 
   <hr class="divider"/>
@@ -300,7 +306,7 @@
   </div>
 </div>
 
-<footer>QRforma · Sistema Autenticado · v54.0</footer>
+<footer>QRforma · Sistema Autenticado · v56.0</footer>
 
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
@@ -343,7 +349,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
-// --- CONFIGURAÇÃO COM AS SUAS CHAVES DO FIREBASE ---
+// --- CONFIGURAÇÃO OFICIAL DO SEU FIREBASE (qrforma-31471) ---
 const firebaseConfig = {
   apiKey: "AIzaSyCvoqjWxpYPwJV26p9DyJAy1ziQashw8Ug",
   authDomain: "qrforma-31471.firebaseapp.com",
@@ -362,14 +368,12 @@ let currentUserEmail = null;
 let isPremiumUser = false;
 let checkInterval = null;
 
-// Ações de clique de Login e Logout (USANDO POPUP PARA DRIBLAR BLOQUEIO DE NAVEGADOR)
 document.getElementById('btn-login-google').addEventListener('click', () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('email');
-    
     auth.signInWithPopup(provider).catch(err => {
-        console.error("Erro no popup de login: ", err);
-        alert("Aconteceu um erro ao abrir a janela do Google. Tente novamente.");
+        console.error("Erro no login: ", err);
+        alert("Aconteceu um erro ao abrir o login do Google. Tente novamente.");
     });
 });
 
@@ -380,7 +384,6 @@ document.getElementById('btn-logout-google').addEventListener('click', () => {
     });
 });
 
-// Observador de estado de login estável
 auth.onAuthStateChanged(async (user) => {
     const loginBtn = document.getElementById('btn-login-google');
     const loggedBox = document.getElementById('user-logged-box');
@@ -508,7 +511,7 @@ const tutorialSteps = [
     { target: 'qr-url', title: '🔗 Destino do QR Code', desc: 'Cole aqui o link para onde o seu cliente vai ao escanear (ex: Instagram, Cardápio, WhatsApp).' },
     { target: 'drop-zone', title: '🖼️ Identidade Visual', desc: 'Suba a logo da sua marca clicando aqui. Imagens com fundo transparente dão o melhor resultado.' },
     { target: 'tut-target-colors', title: '🎨 Estilos e Cores', desc: 'Deixe com a sua cara! Arraste essa barra para pintar o QR Code inteiro com as cores da sua marca.' },
-    { target: 'tut-target-slider', title: '🎚️ Ajuste Fino', desc: 'Controle a mistura da logo com o fundo. Se a validação de leitura falhar, apenas diminua a opacidade.' },
+    { target: 'tut-target-slider', title: '🎚️ Ajuste Fino', desc: 'Controle o tamanho ou a mistura da logo com o fundo para garantir que o sensor da câmera consiga ler o código.' },
     { target: 'download-actions', title: '🚀 Tudo Pronto!', desc: 'Baixe as telas digitais ou libere a versão PRO para exportar vídeos animados em 60FPS para suas redes.' }
 ];
 
@@ -609,8 +612,25 @@ spectrumSlider.addEventListener('input', function() {
   triggerLiveUpdate();
 });
 
+// Dinâmica Inteligente: O controle deslizante altera seu comportamento com base no seletor de estilo
+document.getElementById('logo-style').addEventListener('change', function() {
+    var val = this.value;
+    var sl = document.getElementById('sl-logo');
+    
+    if(val === 'center') {
+        document.getElementById('slider-label').innerText = 'Tamanho da Logo no Centro (Cuidado com a leitura)';
+        sl.min = 15; sl.max = 33; sl.value = 25;
+    } else {
+        document.getElementById('slider-label').innerText = 'Opacidade da Logo ao Fundo (Ajuste Fino)';
+        sl.min = 5; sl.max = 80; sl.value = 40;
+    }
+    document.getElementById('sl-logo-v').textContent = sl.value + '%';
+    triggerLiveUpdate();
+});
+
 document.getElementById('sl-logo').addEventListener('input', function(){
   document.getElementById('sl-logo-v').textContent = this.value + '%';
+  triggerLiveUpdate();
 });
 
 function rr(v){ return Math.round(v); }
@@ -681,9 +701,6 @@ document.getElementById('btn-clear').addEventListener('click', function(){
   document.getElementById('logo-preview-wrap').style.display = 'none'; triggerLiveUpdate();
 });
 
-// Força a renderização inicial
-setTimeout(() => { triggerLiveUpdate(); }, 300);
-
 function renderPalette(){
   var cont = document.getElementById('palette-swatches'); cont.innerHTML = '';
   palette.forEach((c, i) => {
@@ -738,7 +755,8 @@ function drawLogoContained(ctx, img, x, y, w, h) {
     ctx.drawImage(img, x, y, dw, dh);
 }
 
-async function generateQRLayers(url, logoAlpha, baseCol, styleType, quietZoneMultiplier, isForScan = false, coreSize = 800, ecl = QRCode.CorrectLevel.H){
+// O motor estático (Downloads PNG) agora respeita as duas opções visualmente
+async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMode, quietZoneMultiplier, isForScan = false, coreSize = 800, ecl = QRCode.CorrectLevel.H){
     var tmp = document.createElement('div'); tmp.style.display = 'none'; document.body.appendChild(tmp);
     try {
       var qrCodeObj = new QRCode(tmp, { text: url, correctLevel: ecl });
@@ -771,8 +789,32 @@ async function generateQRLayers(url, logoAlpha, baseCol, styleType, quietZoneMul
       var cvsMerged = document.createElement('canvas'); cvsMerged.width = TOTAL_SIZE; cvsMerged.height = TOTAL_SIZE;
       var ctxMerged = cvsMerged.getContext('2d');
       ctxMerged.fillStyle = canvasBgColor; ctxMerged.fillRect(0, 0, TOTAL_SIZE, TOTAL_SIZE);
-      if (logoImg && logoAlpha > 0){ ctxMerged.save(); ctxMerged.globalAlpha = logoAlpha; drawLogoContained(ctxMerged, logoImg, QUIET_ZONE, QUIET_ZONE, coreSize, coreSize); ctxMerged.restore(); }
-      ctxMerged.drawImage(cvsFG, 0, 0); document.body.removeChild(tmp);
+      
+      // Estilo 1: Marca d'água no fundo
+      if (logoImg && logoStyleMode === 'background' && paramValue > 0){ 
+          ctxMerged.save(); 
+          ctxMerged.globalAlpha = paramValue; 
+          drawLogoContained(ctxMerged, logoImg, QUIET_ZONE, QUIET_ZONE, coreSize, coreSize); 
+          ctxMerged.restore(); 
+      }
+      
+      ctxMerged.drawImage(cvsFG, 0, 0); 
+      
+      // Estilo 2: Emblema Centralizado (Fura os pontinhos na exportação)
+      if (logoImg && logoStyleMode === 'center'){
+          ctxMerged.save();
+          ctxMerged.translate(TOTAL_SIZE / 2, TOTAL_SIZE / 2);
+          ctxMerged.fillStyle = canvasBgColor;
+          ctxMerged.beginPath();
+          var logoW_Static = TOTAL_SIZE * paramValue;
+          var pad_Static = TOTAL_SIZE * (isForScan ? 0.01 : 0.02);
+          ctxMerged.roundRect(-logoW_Static/2 - pad_Static, -logoW_Static/2 - pad_Static, logoW_Static + (pad_Static*2), logoW_Static + (pad_Static*2), TOTAL_SIZE * 0.03);
+          ctxMerged.fill();
+          drawLogoContained(ctxMerged, logoImg, -logoW_Static/2, -logoW_Static/2, logoW_Static, logoW_Static);
+          ctxMerged.restore();
+      }
+
+      document.body.removeChild(tmp);
       return { foreground: cvsFG, merged: cvsMerged, bgColor: canvasBgColor };
     } catch(e) { if (document.body.contains(tmp)) document.body.removeChild(tmp); throw e; }
 }
@@ -785,26 +827,66 @@ function simulateRealScan(sourceCanvas) {
     return jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
 }
 
+// O Motor Cinematográfico Dinâmico
 function drawAnimationFrame(ctx, w, h, time) {
-    var cx = w / 2, cy = h / 2; var padSafety = Math.ceil((w / 2048) * 100); var logoW = w - padSafety*2;
-    var isLightModule = lum(currentActiveColor) > 0.5; var canvasBgColor = isLightModule ? '#13131a' : '#ffffff';
+    var cx = w / 2, cy = h / 2; 
+    var padSafety = Math.ceil((w / 2048) * 100); 
+    var logoW_Large = w - padSafety * 4; 
     
-    ctx.resetTransform(); ctx.fillStyle = canvasBgColor; ctx.fillRect(0, 0, w, h);
+    var logoStyleMode = document.getElementById('logo-style').value;
+    var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
 
-    if (time <= 1500) { 
-        let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy);
-        let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale); drawLogoContained(ctx, logoImg, -logoW/2, -logoW/2, logoW, logoW);
-    } else if (time <= 2200) { 
-        let p = easeInOutCubic((time - 1500) / 700);
-        ctx.save(); ctx.globalAlpha = 1 - p; ctx.filter = `blur(${p * 20}px)`; ctx.translate(cx, cy); let ls = 1.0 + (0.3 * p); ctx.scale(ls, ls);
-        drawLogoContained(ctx, logoImg, -logoW/2, -logoW/2, logoW, logoW); ctx.restore();
-        ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; ctx.translate(cx, cy); let qs = 0.8 + (0.2 * p); ctx.scale(qs, qs);
-        ctx.drawImage(layerForeground, -w/2, -h/2, w, h); ctx.restore();
-    } else { 
-        let opacityMax = parseInt(document.getElementById('sl-logo').value) / 100; let p = Math.min((time - 2200) / 400, 1.0); 
-        let currentOpacity = opacityMax * easeOutCubic(p); ctx.globalAlpha = 1.0; ctx.filter = 'none';
-        if (logoImg && currentOpacity > 0) { ctx.save(); ctx.globalAlpha = currentOpacity; let qrDrawSize = w * 0.85; drawLogoContained(ctx, logoImg, (w-qrDrawSize)/2, (w-qrDrawSize)/2, qrDrawSize, qrDrawSize); ctx.restore(); }
-        ctx.drawImage(layerForeground, 0, 0, w, h);
+    var isLightModule = lum(currentActiveColor) > 0.5; 
+    var canvasBgColor = isLightModule ? '#13131a' : '#ffffff';
+    
+    ctx.resetTransform(); 
+    ctx.fillStyle = canvasBgColor; 
+    ctx.fillRect(0, 0, w, h);
+
+    if (logoStyleMode === 'center') {
+        // EFEITO 1: ENCOLHIMENTO CENTRAL
+        var logoW_Small = w * sliderParam; 
+
+        if (time <= 1500) { 
+            let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy);
+            let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale); 
+            drawLogoContained(ctx, logoImg, -logoW_Large/2, -logoW_Large/2, logoW_Large, logoW_Large);
+        } else if (time <= 2200) { 
+            let p = easeInOutCubic((time - 1500) / 700);
+            ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; ctx.drawImage(layerForeground, 0, 0, w, h); ctx.restore();
+            let currentLogoW = logoW_Large - ((logoW_Large - logoW_Small) * p);
+            if (logoImg) {
+                ctx.save(); ctx.translate(cx, cy); ctx.fillStyle = canvasBgColor; ctx.beginPath();
+                let pad = w * 0.02 * p; 
+                ctx.roundRect(-currentLogoW/2 - pad, -currentLogoW/2 - pad, currentLogoW + (pad*2), currentLogoW + (pad*2), w * 0.03); ctx.fill();
+                drawLogoContained(ctx, logoImg, -currentLogoW/2, -currentLogoW/2, currentLogoW, currentLogoW); ctx.restore();
+            }
+        } else { 
+            ctx.globalAlpha = 1.0; ctx.filter = 'none'; ctx.drawImage(layerForeground, 0, 0, w, h);
+            if (logoImg) { 
+                ctx.save(); ctx.translate(cx, cy); ctx.fillStyle = canvasBgColor; ctx.beginPath();
+                let pad = w * 0.02; ctx.roundRect(-logoW_Small/2 - pad, -logoW_Small/2 - pad, logoW_Small + (pad*2), logoW_Small + (pad*2), w * 0.03); ctx.fill();
+                drawLogoContained(ctx, logoImg, -logoW_Small/2, -logoW_Small/2, logoW_Small, logoW_Small); ctx.restore(); 
+            }
+        }
+    } else {
+        // EFEITO 2: MARCA D'ÁGUA NO FUNDO (O Antigo)
+        if (time <= 1500) { 
+            let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy);
+            let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale); 
+            drawLogoContained(ctx, logoImg, -logoW_Large/2, -logoW_Large/2, logoW_Large, logoW_Large);
+        } else if (time <= 2200) { 
+            let p = easeInOutCubic((time - 1500) / 700);
+            ctx.save(); ctx.globalAlpha = 1 - p; ctx.filter = `blur(${p * 20}px)`; ctx.translate(cx, cy); let ls = 1.0 + (0.3 * p); ctx.scale(ls, ls);
+            drawLogoContained(ctx, logoImg, -logoW_Large/2, -logoW_Large/2, logoW_Large, logoW_Large); ctx.restore();
+            ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; ctx.translate(cx, cy); let qs = 0.8 + (0.2 * p); ctx.scale(qs, qs);
+            ctx.drawImage(layerForeground, -w/2, -h/2, w, h); ctx.restore();
+        } else { 
+            let p = Math.min((time - 2200) / 400, 1.0); 
+            let currentOpacity = sliderParam * easeOutCubic(p); ctx.globalAlpha = 1.0; ctx.filter = 'none';
+            if (logoImg && currentOpacity > 0) { ctx.save(); ctx.globalAlpha = currentOpacity; let qrDrawSize = w * 0.85; drawLogoContained(ctx, logoImg, (w-qrDrawSize)/2, (w-qrDrawSize)/2, qrDrawSize, qrDrawSize); ctx.restore(); }
+            ctx.drawImage(layerForeground, 0, 0, w, h);
+        }
     }
 }
 
@@ -822,20 +904,25 @@ async function runEngine() {
       finalConf.innerHTML = '—'; if(animRequest) cancelAnimationFrame(animRequest); return; 
   }
   if(animRequest) cancelAnimationFrame(animRequest); animStartTime = 0;
-  var opacity = parseInt(document.getElementById('sl-logo').value) / 100; var styleType = document.getElementById('qr-style').value; var baseCol = currentActiveColor; 
+  
+  var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100; 
+  var styleType = document.getElementById('qr-style').value; 
+  var logoStyleMode = document.getElementById('logo-style').value;
+  var baseCol = currentActiveColor; 
+  
   var overlay = document.getElementById('live-overlay'); if(overlay) overlay.classList.add('active'); 
 
   try {
-    var layersPreview = await generateQRLayers(url, opacity, baseCol, styleType, 4, false, 800);
-    var layersScan    = await generateQRLayers(url, opacity, baseCol, styleType, 4, true, 800); 
+    var layersPreview = await generateQRLayers(url, sliderParam, baseCol, styleType, logoStyleMode, 4, false, 800);
+    var layersScan    = await generateQRLayers(url, sliderParam, baseCol, styleType, logoStyleMode, 4, true, 800); 
     layerForeground = layersPreview.foreground; layerDigitalMerged = layersPreview.merged;    
     var scanResult = simulateRealScan(layersScan.merged);
     
     if (scanResult && scanResult.data === url) {
-        logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>Contraste ideal e dados mapeados com segurança para o link.</span></div></div>`;
+        logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>Contraste ideal e dados mapeados com segurança para o scanner.</span></div></div>`;
         finalConf.innerHTML = '<strong style="color:var(--ok-border)">Operacional</strong>';
     } else {
-        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Risco de erro no sensor. Reduza a opacidade ou troque a cor.</span></div></div>`;
+        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Risco de erro no sensor. Reduza o nível do ajuste ou troque a cor.</span></div></div>`;
         finalConf.innerHTML = '<strong style="color:var(--fail-border)">Risco Detetado</strong>';
     }
     var destCanvas = document.getElementById('qr-canvas'); destCanvas.width = 1200; destCanvas.height = 1200; 
@@ -850,7 +937,6 @@ function triggerLiveUpdate() { clearTimeout(liveUpdateTimer); liveUpdateTimer = 
 
 document.getElementById('qr-url').addEventListener('input', triggerLiveUpdate);
 document.getElementById('qr-style').addEventListener('change', triggerLiveUpdate);
-document.getElementById('sl-logo').addEventListener('input', triggerLiveUpdate);
 
 document.getElementById('btn-png-digital').onclick = function(){
   if (isPremiumUser) {
@@ -889,7 +975,9 @@ document.getElementById('btn-png-print').onclick = async function(){
   
   var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando 4K...";
   try {
-    var l = await generateQRLayers(document.getElementById('qr-url').value, parseInt(document.getElementById('sl-logo').value) / 100, currentActiveColor, document.getElementById('qr-style').value, 4, false, 2048);
+    var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
+    var logoStyleMode = document.getElementById('logo-style').value;
+    var l = await generateQRLayers(document.getElementById('qr-url').value, sliderParam, currentActiveColor, document.getElementById('qr-style').value, logoStyleMode, 4, false, 2048);
     var a = document.createElement('a'); a.download = 'QRforma-Impressao-4K.png'; a.href = l.merged.toDataURL('image/png'); a.click();
   } catch(e) { alert("Erro ao gerar arquivo: " + e.message); }
   btn.innerText = oldTxt;
@@ -901,7 +989,10 @@ document.getElementById('btn-dl-video').addEventListener('click', async function
   document.getElementById('loader-video').style.display = 'flex';
   var vCanvas = document.createElement('canvas'); vCanvas.width = 1080; vCanvas.height = 1080; var vCtx = vCanvas.getContext('2d');
   
-  var tempHighRes = await generateQRLayers(document.getElementById('qr-url').value, parseInt(document.getElementById('sl-logo').value) / 100, currentActiveColor, document.getElementById('qr-style').value, 4, false, 1080);
+  var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
+  var logoStyleMode = document.getElementById('logo-style').value;
+  var tempHighRes = await generateQRLayers(document.getElementById('qr-url').value, sliderParam, currentActiveColor, document.getElementById('qr-style').value, logoStyleMode, 4, false, 1080);
+  
   var oldForeground = layerForeground; layerForeground = tempHighRes.foreground;
   
   var stream = vCanvas.captureStream(60); var recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }); var chunks = [];
@@ -930,7 +1021,8 @@ async function animatePixQR(pixText) {
     
     if (!pixLogo.complete) { await new Promise(r => pixLogo.onload = r); }
     
-    var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 4, true, 800, QRCode.CorrectLevel.L);
+    // O PIX interno do app sempre será gerado sem logo no meio por precaução bancária
+    var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 'center', 4, true, 800, QRCode.CorrectLevel.L);
     var pixLayer = l.foreground;
     
     var startTime = performance.now();
@@ -972,6 +1064,8 @@ async function animatePixQR(pixText) {
     if(pixAnimReq) cancelAnimationFrame(pixAnimReq);
     pixAnimReq = requestAnimationFrame(loop);
 }
+
+setTimeout(() => { triggerLiveUpdate(); }, 400);
 </script>
 </body>
 </html>
