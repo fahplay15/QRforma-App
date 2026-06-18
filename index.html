@@ -261,10 +261,10 @@
     </div>
   </div>
 
-  <label class="fl" id="slider-label">Tamanho da Logo no Centro</label>
+  <label class="fl" id="slider-label">Tamanho da Logo no Centro (Máx 24%)</label>
   <div class="slider-row" id="tut-target-slider">
-    <input type="range" id="sl-logo" min="15" max="33" value="25"/>
-    <span class="slider-val" id="sl-logo-v">25%</span>
+    <input type="range" id="sl-logo" min="15" max="24" value="22"/>
+    <span class="slider-val" id="sl-logo-v">22%</span>
   </div>
 
   <hr class="divider"/>
@@ -306,7 +306,7 @@
   </div>
 </div>
 
-<footer>QRforma · Sistema Autenticado · v56.0</footer>
+<footer>QRforma · Sistema Autenticado · v57.0</footer>
 
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
@@ -612,14 +612,14 @@ spectrumSlider.addEventListener('input', function() {
   triggerLiveUpdate();
 });
 
-// Dinâmica Inteligente: O controle deslizante altera seu comportamento com base no seletor de estilo
+// MODIFICAÇÃO INTELIGENTE: Aplica o teto de 24% dinamicamente para o Emblema Centralizado
 document.getElementById('logo-style').addEventListener('change', function() {
     var val = this.value;
     var sl = document.getElementById('sl-logo');
     
     if(val === 'center') {
-        document.getElementById('slider-label').innerText = 'Tamanho da Logo no Centro (Cuidado com a leitura)';
-        sl.min = 15; sl.max = 33; sl.value = 25;
+        document.getElementById('slider-label').innerText = 'Tamanho da Logo no Centro (Limite Seguro: Máx 24%)';
+        sl.min = 15; sl.max = 24; sl.value = 22;
     } else {
         document.getElementById('slider-label').innerText = 'Opacidade da Logo ao Fundo (Ajuste Fino)';
         sl.min = 5; sl.max = 80; sl.value = 40;
@@ -755,7 +755,6 @@ function drawLogoContained(ctx, img, x, y, w, h) {
     ctx.drawImage(img, x, y, dw, dh);
 }
 
-// O motor estático (Downloads PNG) agora respeita as duas opções visualmente
 async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMode, quietZoneMultiplier, isForScan = false, coreSize = 800, ecl = QRCode.CorrectLevel.H){
     var tmp = document.createElement('div'); tmp.style.display = 'none'; document.body.appendChild(tmp);
     try {
@@ -790,7 +789,6 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
       var ctxMerged = cvsMerged.getContext('2d');
       ctxMerged.fillStyle = canvasBgColor; ctxMerged.fillRect(0, 0, TOTAL_SIZE, TOTAL_SIZE);
       
-      // Estilo 1: Marca d'água no fundo
       if (logoImg && logoStyleMode === 'background' && paramValue > 0){ 
           ctxMerged.save(); 
           ctxMerged.globalAlpha = paramValue; 
@@ -800,7 +798,6 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
       
       ctxMerged.drawImage(cvsFG, 0, 0); 
       
-      // Estilo 2: Emblema Centralizado (Fura os pontinhos na exportação)
       if (logoImg && logoStyleMode === 'center'){
           ctxMerged.save();
           ctxMerged.translate(TOTAL_SIZE / 2, TOTAL_SIZE / 2);
@@ -819,15 +816,6 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
     } catch(e) { if (document.body.contains(tmp)) document.body.removeChild(tmp); throw e; }
 }
 
-function simulateRealScan(sourceCanvas) {
-    if (typeof jsQR === 'undefined') { return { data: document.getElementById('qr-url').value }; }
-    var scanSize = 800; var temp = document.createElement('canvas'); temp.width = scanSize; temp.height = scanSize;
-    var tCtx = temp.getContext('2d'); tCtx.drawImage(sourceCanvas, 0, 0, scanSize, scanSize);
-    var imgData = tCtx.getImageData(0, 0, scanSize, scanSize);
-    return jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
-}
-
-// O Motor Cinematográfico Dinâmico
 function drawAnimationFrame(ctx, w, h, time) {
     var cx = w / 2, cy = h / 2; 
     var padSafety = Math.ceil((w / 2048) * 100); 
@@ -844,7 +832,6 @@ function drawAnimationFrame(ctx, w, h, time) {
     ctx.fillRect(0, 0, w, h);
 
     if (logoStyleMode === 'center') {
-        // EFEITO 1: ENCOLHIMENTO CENTRAL
         var logoW_Small = w * sliderParam; 
 
         if (time <= 1500) { 
@@ -870,7 +857,6 @@ function drawAnimationFrame(ctx, w, h, time) {
             }
         }
     } else {
-        // EFEITO 2: MARCA D'ÁGUA NO FUNDO (O Antigo)
         if (time <= 1500) { 
             let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy);
             let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale); 
@@ -1021,7 +1007,6 @@ async function animatePixQR(pixText) {
     
     if (!pixLogo.complete) { await new Promise(r => pixLogo.onload = r); }
     
-    // O PIX interno do app sempre será gerado sem logo no meio por precaução bancária
     var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 'center', 4, true, 800, QRCode.CorrectLevel.L);
     var pixLayer = l.foreground;
     
