@@ -164,7 +164,6 @@
   #tutorial-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(3px); z-index: 9000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   #tutorial-overlay.active { opacity: 1; pointer-events: all; }
   
-  /* Ajuste no z-index e posicionamento dinâmico do Dialog */
   #tutorial-dialog { position: fixed; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--accent); border-radius: 14px; padding: 20px; width: 90%; max-width: 400px; z-index: 9005; box-shadow: 0 10px 40px rgba(124,58,237,0.4); opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; gap: 12px; }
   #tutorial-dialog.active { opacity: 1; pointer-events: all; transform: translateX(-50%) translateY(0); }
   
@@ -281,20 +280,21 @@
   </div>
 </div>
 
-<footer>QRforma · Acesso Pro · v49.0</footer>
+<footer>QRforma · Acesso Pro · v50.0</footer>
 
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
         <div class="pw-icon">🚀</div>
         <h2 class="pw-title">Desbloqueie o Potencial Máximo</h2>
-        <p class="pw-desc">A versão básica é grátis, mas arquivos de altíssima definição e animações são recursos exclusivos da versão <strong>PRO</strong>.</p>
+        <p class="pw-desc">A versão básica é grátis, mas arquivos em alta definição e animações são recursos exclusivos da versão <strong>PRO</strong>.</p>
         
         <ul class="pw-features">
             <li>✅ Downloads ilimitados (Acesso Grátis esgotado)</li>
             <li>✅ <strong>Vídeos Fluidos 60FPS</strong> para Telões e Instagram</li>
-            <li>✅ <strong>Arquivos em 4K</strong> (Borda fina) para Gráficas</li>
-            <li>✅ Liberação permanente neste navegador</li>
+            <li>✅ <strong>Arquivos em 4K</strong> (Borda segura de 4 módulos) para Gráficas</li>
         </ul>
+
+        <input type="email" id="cliente-email" placeholder="Digite seu melhor e-mail" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif;" required />
 
         <button class="btn-buy" id="btn-gerar-pix">Gerar PIX para Liberar (R$ 19,90)</button>
         
@@ -345,7 +345,6 @@ function showTutorialStep(stepIndex) {
         document.getElementById('tutorial-overlay').classList.remove('active');
         dialog.classList.remove('active');
         localStorage.setItem('qrforma_tutorial_done', 'true');
-        // Reseta as posições para limpar a tela
         dialog.style.top = '';
         dialog.style.bottom = '';
         return;
@@ -357,14 +356,11 @@ function showTutorialStep(stepIndex) {
     if (targetEl) {
         targetEl.classList.add('tut-highlight');
         
-        // MUDANÇA: Lógica inteligente para mover a caixa de mensagem
         if (step.target === 'download-actions') {
-            // Se for o último passo, joga a caixa para o TOPO da tela
             dialog.style.bottom = 'auto';
             dialog.style.top = '30px'; 
             targetEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
         } else {
-            // Se forem os primeiros passos, mantém no rodapé
             dialog.style.top = 'auto';
             dialog.style.bottom = '30px'; 
             targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -386,7 +382,6 @@ window.addEventListener('load', () => {
     if (!localStorage.getItem('qrforma_tutorial_done')) {
         setTimeout(() => {
             document.getElementById('tutorial-overlay').classList.add('active');
-            // Inicializa a caixa sempre por baixo no primeiro frame
             document.getElementById('tutorial-dialog').style.bottom = '30px';
             document.getElementById('tutorial-dialog').classList.add('active');
         }, 800); 
@@ -458,6 +453,12 @@ function unlockProFeatures() {
 }
 
 document.getElementById('btn-gerar-pix').addEventListener('click', async function() {
+    var emailCliente = document.getElementById('cliente-email').value;
+    if (!emailCliente || !emailCliente.includes('@')) {
+        alert("Por favor, digite um e-mail válido para vincular sua conta PRO.");
+        return;
+    }
+
     var btn = this;
     btn.innerText = "⏳ Gerando PIX seguro...";
     btn.disabled = true;
@@ -466,7 +467,7 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
         const res = await fetch('/api/gerar-pix', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: clientToken })
+            body: JSON.stringify({ token: clientToken, email: emailCliente }) 
         });
         
         if (!res.ok) throw new Error("Falha ao se comunicar com o servidor");
@@ -476,6 +477,7 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
         animatePixQR(pixData.qr_code); 
         
         btn.style.display = 'none';
+        document.getElementById('cliente-email').style.display = 'none';
         document.getElementById('area-pix').style.display = 'block';
 
         checkInterval = setInterval(async () => {
@@ -493,7 +495,7 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
 
     } catch (e) {
         alert("Ocorreu um erro ao gerar o pagamento. Tente novamente mais tarde.");
-        btn.innerText = "Tentar Gerar Novamente";
+        btn.innerText = "Gerar PIX para Liberar (R$ 19,90)";
         btn.disabled = false;
     }
 });
@@ -594,7 +596,7 @@ document.getElementById('logo-input').addEventListener('change', function(e){
 });
 document.getElementById('btn-clear').addEventListener('click', function(){
   logoImg = null; document.getElementById('logo-input').value = '';
-  document.getElementById('logo-preview-wrap').style.display = 'none'; triggerLiveUpdate();
+  document.getElementById('logo-preview-wrap').style.none = 'none'; triggerLiveUpdate();
 });
 
 function renderPalette(){
@@ -797,12 +799,13 @@ document.getElementById('btn-png-digital').onclick = function(){
   }
 };
 
+// CORREÇÃO: Margem do 4K alterada de 2 para 4 (Padrão ISO 18004)
 document.getElementById('btn-png-print').onclick = async function(){
   if (!isPremiumUser) { document.getElementById('paywall-modal').classList.add('active'); return; }
   
   var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando 4K...";
   try {
-    var l = await generateQRLayers(document.getElementById('qr-url').value, parseInt(document.getElementById('sl-logo').value) / 100, currentActiveColor, document.getElementById('qr-style').value, 2, false, 2048);
+    var l = await generateQRLayers(document.getElementById('qr-url').value, parseInt(document.getElementById('sl-logo').value) / 100, currentActiveColor, document.getElementById('qr-style').value, 4, false, 2048);
     var a = document.createElement('a'); a.download = 'QRforma-Impressao-4K.png'; a.href = l.merged.toDataURL('image/png'); a.click();
   } catch(e) { alert("Erro ao gerar arquivo: " + e.message); }
   btn.innerText = oldTxt;
@@ -832,6 +835,7 @@ document.getElementById('btn-dl-video').addEventListener('click', async function
   recorder.stop();
 });
 
+// --- MOTOR DE ANIMAÇÃO EXCLUSIVO PARA O PIX DE PAGAMENTO ---
 var pixAnimReq = null;
 var pixLogo = new Image();
 pixLogo.src = 'LogoQRforma.png'; 

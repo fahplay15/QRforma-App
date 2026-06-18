@@ -1,36 +1,59 @@
+import fetch from "node-fetch";
+
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Método não permitido');
-    
-    const { token } = req.body;
-    const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "Método não permitido" });
+    }
+
+    const { token, email } = req.body;
+
+    if (!token) {
+        return res.status(400).json({ error: "O token do cliente é obrigatório." });
+    }
+
+    // CORREÇÃO 1: Captura o e-mail real enviado pelo front-end
+    const payerEmail = email || "cliente@qrforma.com.br";
+
+    // CORREÇÃO 2: Chave de Idempotência Dinâmica (Token + Timestamp)
+    // Evita o bug de retornar PIX expirado em cliques subsequentes
+    const idempotencyKey = `${token}-${Date.now()}`;
 
     try {
-        const response = await fetch("https://api.mercadopago.com/v1/payments", {
+        const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${MP_ACCESS_TOKEN}`,
-                "Content-Type": "application/json",
-                "X-Idempotency-Key": token
+                "Authorization": `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+                "X-Idempotency-Key": idempotencyKey,
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                transaction_amount: 19.90, // Valor oficial de lançamento
-                description: "QRforma Pro - Acesso Vitalício",
+                transaction_amount: 19.90,
+                description: "QRforma Pro - Acesso Permanente",
                 payment_method_id: "pix",
-                payer: { email: "cliente@qrforma.com.br" }, // Email padrão para aprovação
-                external_reference: token // Amarra o pagamento ao navegador do cliente
+                payer: {
+                    email: payerEmail
+                },
+                // Guardamos o token do navegador aqui para a API de checagem consultar depois
+                external_reference: token 
             })
         });
 
-        const data = await response.json();
-        
-        if (!response.ok) throw new Error(data.message || 'Erro no Mercado Pago');
+        if (!mpResponse.ok) {
+            const errorData = await mpResponse.json();
+            console.error("Erro Mercado Pago:", errorData);
+            throw new Error("Falha ao gerar cobrança no Mercado Pago.");
+        }
 
-        res.status(200).json({
-            qr_code: data.point_of_interaction.transaction_data.qr_code,
-            qr_code_base64: data.point_of_interaction.transaction_data.qr_code_base64
+        const paymentData = await mpResponse.json();
+
+        // Retorna a chave copia e cola e o QR Code em base64 nativos
+        return res.status(200).json({
+            qr_code: paymentData.point_of_interaction.transaction_data.qr_code,
+            qr_code_base64: paymentData.point_of_interaction.transaction_data.qr_code_base64,
+            payment_id: paymentData.id
         });
+
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro ao gerar PIX" });
+        return res.status(500).json({ error: error.message });
     }
 }
