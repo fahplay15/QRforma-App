@@ -662,6 +662,10 @@ async function generateQRLayers(url, logoAlpha, baseCol, styleType, quietZoneMul
       var mc = oQR.moduleCount; var cell = coreSize / mc; 
       var QUIET_ZONE = Math.ceil(cell * quietZoneMultiplier); var TOTAL_SIZE = coreSize + (QUIET_ZONE * 2);
       var isLightModule = lum(baseCol) > 0.5; var canvasBgColor = isLightModule ? '#13131a' : '#ffffff';
+      // Garante contraste mínimo (>=4.0) também nos módulos de dados, e não só nos finder
+      // patterns. Antes disso, era possível escolher uma cor clara o suficiente para passar
+      // no finder (corrigido) mas ficar ilegível no corpo do QR (sem correção nenhuma).
+      var contrastedCol = ensureContrast(baseCol.slice(), hexToRgb(canvasBgColor));
 
       var cvsFG = document.createElement('canvas'); cvsFG.width = TOTAL_SIZE; cvsFG.height = TOTAL_SIZE;
       var ctxFG = cvsFG.getContext('2d'); if (!ctxFG) throw new Error("Memória insuficiente.");
@@ -675,11 +679,11 @@ async function generateQRLayers(url, logoAlpha, baseCol, styleType, quietZoneMul
           if (!oQR.isDark(row, col)) continue; 
           if ((row < 7 && col < 7) || (row < 7 && col >= mc-7) || (row >= mc-7 && col < 7)) continue;
           var x = (col * cell) + QUIET_ZONE, y = (row * cell) + QUIET_ZONE;
-          ctxFG.fillStyle = `rgb(${rr(baseCol[0])},${rr(baseCol[1])},${rr(baseCol[2])})`;
+          ctxFG.fillStyle = `rgb(${rr(contrastedCol[0])},${rr(contrastedCol[1])},${rr(contrastedCol[2])})`;
           drawModule(ctxFG, actualStyle, x, y, cell, pad);
         }
       }
-      drawFinders(ctxFG, mc, cell, baseCol, QUIET_ZONE, isForScan, canvasBgColor); 
+      drawFinders(ctxFG, mc, cell, contrastedCol, QUIET_ZONE, isForScan, canvasBgColor); 
 
       var cvsMerged = document.createElement('canvas'); cvsMerged.width = TOTAL_SIZE; cvsMerged.height = TOTAL_SIZE;
       var ctxMerged = cvsMerged.getContext('2d');
@@ -740,9 +744,11 @@ async function runEngine() {
 
   try {
     var layersPreview = await generateQRLayers(url, opacity, baseCol, styleType, 4, false, 800);
-    var layersScan    = await generateQRLayers(url, opacity, baseCol, styleType, 4, true, 800); 
-    layerForeground = layersPreview.foreground; layerDigitalMerged = layersPreview.merged;    
-    var scanResult = simulateRealScan(layersScan.merged);
+    layerForeground = layersPreview.foreground; layerDigitalMerged = layersPreview.merged;
+    // Valida a leitura sobre o PRÓPRIO arquivo que será exportado (mesmo estilo de módulo
+    // e mesma logo). Antes, esse teste rodava numa cópia forçada em quadrados, que nunca
+    // refletia o desenho real entregue ao usuário (círculos, diamantes, gotas etc).
+    var scanResult = simulateRealScan(layersPreview.merged);
     
     if (scanResult && scanResult.data === url) {
         logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>Contraste ideal e dados mapeados com segurança para o link.</span></div></div>`;
@@ -802,7 +808,7 @@ document.getElementById('btn-png-print').onclick = async function(){
   
   var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando 4K...";
   try {
-    var l = await generateQRLayers(document.getElementById('qr-url').value, parseInt(document.getElementById('sl-logo').value) / 100, currentActiveColor, document.getElementById('qr-style').value, 2, false, 2048);
+    var l = await generateQRLayers(document.getElementById('qr-url').value, parseInt(document.getElementById('sl-logo').value) / 100, currentActiveColor, document.getElementById('qr-style').value, 4, false, 2048);
     var a = document.createElement('a'); a.download = 'QRforma-Impressao-4K.png'; a.href = l.merged.toDataURL('image/png'); a.click();
   } catch(e) { alert("Erro ao gerar arquivo: " + e.message); }
   btn.innerText = oldTxt;
@@ -843,7 +849,7 @@ async function animatePixQR(pixText) {
     
     if (!pixLogo.complete) { await new Promise(r => pixLogo.onload = r); }
     
-    var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 4, true, 800, QRCode.CorrectLevel.L);
+    var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 4, true, 800, QRCode.CorrectLevel.M);
     var pixLayer = l.foreground;
     
     var startTime = performance.now();
