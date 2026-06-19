@@ -144,7 +144,7 @@
       padding: 32px 24px; max-width: 400px; width: 100%; text-align: center;
       box-shadow: 0 10px 40px rgba(124,58,237,0.2); transform: translateY(20px); transition: transform 0.3s;
   }
-  .paywall-modal.active .paywall-card { transform: translateY(0); }
+  .paywall-card { transform: translateY(0); }
   .pw-icon { font-size: 2.5rem; margin-bottom: 12px; }
   .pw-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; color: #fff; }
   .pw-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
@@ -186,7 +186,6 @@
   footer{padding:16px;color:var(--muted);font-size:.68rem;font-family:'Space Mono',monospace;text-align:center}
 </style>
 
-<!-- SCRIPTS OFICIAIS DO SDK DO FIREBASE (V8 COMPAT) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
@@ -302,7 +301,7 @@
   <div class="actions" id="download-actions">
     <div class="actions-row">
       <button class="btn-sec btn-dl-digital" id="btn-png-digital">⬇ Tela Digital (Grátis)</button>
-      <button class="btn-sec btn-pro" id="btn-png-print">🔒 Alta Resolução (PRO)</button>
+      <button class="btn-sec btn-pro" id="btn-png-print">🔒 Impressão (PRO)</button>
     </div>
     <button class="btn-sec btn-pro btn-dl-video" id="btn-dl-video">🎬 Baixar Vídeo Full HD 60FPS (PRO)</button>
   </div>
@@ -310,7 +309,6 @@
 
 <footer>QRforma · Sistema Autenticado · v61.0</footer>
 
-<!-- MODAL DE PAYWALL PIX DINÂMICO -->
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
         <div class="pw-icon">🚀</div>
@@ -320,7 +318,7 @@
         <ul class="pw-features">
             <li>✅ Downloads ilimitados (Acesso Grátis esgotado)</li>
             <li>✅ <strong>Vídeos Fluidos 60FPS</strong> para Telões e Instagram</li>
-            <li>✅ <strong>Arquivos Alta Resolução</strong> para Gráficas</li>
+            <li>✅ <strong>Arquivos para Impressão</strong> de alta qualidade</li>
         </ul>
 
         <button class="btn-buy" id="btn-gerar-pix">Gerar PIX para Liberar (R$ 19,90)</button>
@@ -335,7 +333,6 @@
     </div>
 </div>
 
-<!-- ESTRUTURAS DO TUTORIAL (ONBOARDING) -->
 <div id="tutorial-overlay"></div>
 <div id="tutorial-dialog">
     <div class="tut-header">
@@ -393,7 +390,6 @@ auth.onAuthStateChanged(async (user) => {
     const loggedBox = document.getElementById('user-logged-box');
     const emailDisplay = document.getElementById('user-email-display');
     
-    // Fallback caso o ID do botão mude na renderização
     const activeLoginBtn = loginBtn || document.getElementById('btn-login-google');
     
     if (user) {
@@ -449,10 +445,10 @@ function unlockProFeatures() {
     if(document.getElementById('pro-badge')) document.getElementById('pro-badge').style.display = 'flex';
     if(document.getElementById('lock-overlay')) document.getElementById('lock-overlay').classList.remove('active');
     
-    // Mudança para Ilimitado em todos e terminologia correta
+    // ATUALIZAÇÃO AJUSTE FINO: Mudança para nomenclatura "Impressão (Ilimitado)"
     let btnPrint = document.getElementById('btn-png-print');
     if(btnPrint) {
-        btnPrint.innerHTML = '⬇ Alta Resolução (Ilimitado)';
+        btnPrint.innerHTML = '⬇ Impressão (Ilimitado)';
         btnPrint.classList.remove('btn-pro');
         btnPrint.classList.add('btn-dl-print');
     }
@@ -747,7 +743,6 @@ function renderPalette(){
   });
 }
 
-// --- INTEGRAÇÃO DO DESIGN MÓDULO ORGÂNICO / LÍQUIDO ---
 function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
   var r = size / 2, cx = x + r, cy = y + r, d = size - (pad * 2);
   ctx.beginPath();
@@ -767,7 +762,6 @@ function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
   }
 }
 
-// --- INTEGRAÇÃO DOS FINDERS PREMIUM COM ANEL REDONDO E DIAMANTE ---
 function drawFinders(ctx, n, cell, col, offset, isForScan, canvasBgColor, styleType){
   var bgRgb = hexToRgb(canvasBgColor); var fcArray = ensureContrast(col.slice(), bgRgb);
   var fc = `rgb(${rr(fcArray[0])},${rr(fcArray[1])},${rr(fcArray[2])})`;
@@ -879,14 +873,6 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
     } catch(e) { if (document.body.contains(tmp)) document.body.removeChild(tmp); throw e; }
 }
 
-function simulateRealScan(sourceCanvas) {
-    if (typeof jsQR === 'undefined') { return { data: document.getElementById('qr-url').value }; }
-    var scanSize = 800; var temp = document.createElement('canvas'); temp.width = scanSize; temp.height = scanSize;
-    var tCtx = temp.getContext('2d'); tCtx.drawImage(sourceCanvas, 0, 0, scanSize, scanSize);
-    var imgData = tCtx.getImageData(0, 0, scanSize, scanSize);
-    return jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
-}
-
 function drawAnimationFrame(ctx, w, h, time) {
     var cx = w / 2, cy = h / 2; 
     var padSafety = Math.ceil((w / 2048) * 100); 
@@ -974,7 +960,6 @@ async function runEngine() {
     var layersScan    = await generateQRLayers(url, sliderParam, baseCol, styleType, logoStyleMode, 4, true, 800); 
     layerForeground = layersPreview.foreground; layerDigitalMerged = layersPreview.merged;    
     
-    // CORREÇÃO ANTI-FALSO NEGATIVO: Ignora o buraco no scannerjs e valida pelo contraste real
     var isBgDark = lum(baseCol) > 0.5; var safeColorContrast = contrast(baseCol, isBgDark ? [19,19,26] : [255,255,255]);
     var scanResult = simulateRealScan(layersScan.merged);
     var validationPassed = false;
@@ -1041,12 +1026,12 @@ document.getElementById('btn-png-digital').onclick = function(){
 document.getElementById('btn-png-print').onclick = async function(){
   if (!isPremiumUser) { triggerPaywallFlow(); return; }
   
-  var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando Alta Resolução...";
+  var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando Impressão...";
   try {
     var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
     var logoStyleMode = document.getElementById('logo-style').value;
     var l = await generateQRLayers(document.getElementById('qr-url').value, sliderParam, currentActiveColor, document.getElementById('qr-style').value, logoStyleMode, 4, false, 2048);
-    var a = document.createElement('a'); a.download = 'QRforma-AltaRes.png'; a.href = l.merged.toDataURL('image/png'); a.click();
+    var a = document.createElement('a'); a.download = 'QRforma-Impressao.png'; a.href = l.merged.toDataURL('image/png'); a.click();
   } catch(e) { alert("Erro ao gerar arquivo: " + e.message); }
   btn.innerText = oldTxt;
 };
