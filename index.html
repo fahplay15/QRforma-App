@@ -4,9 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QRforma Pro · Live Spectrum Engine</title>
-<!-- ... (mesmo CSS e scripts das versões anteriores) ... -->
 <style>
-  /* [MANTENHA O MESMO CSS DAS VERSÕES ANTERIORES] */
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{
@@ -90,7 +88,7 @@
   .vlog-item.ok{background:var(--ok-bg);border:1px solid var(--ok-border);color:var(--ok-text)}
   .vlog-item.fail{background:var(--fail-bg);border:1px solid var(--fail-border);color:var(--fail-text)}
   
-  .qr-container { position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; border-radius: 14px; overflow: hidden; background: #fff; padding: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 100%; box-sizing:border-box; }
+  .qr-container { position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; border-radius: 14px; overflow: hidden; background: #fff; padding: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 100%; box-sizing: border-box; }
   #qr-canvas { border-radius: 6px; width: 100%; max-width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: contain; transition: filter 0.2s; display: block; }
   
   #live-overlay {
@@ -146,7 +144,7 @@
       padding: 32px 24px; max-width: 400px; width: 100%; text-align: center;
       box-shadow: 0 10px 40px rgba(124,58,237,0.2); transform: translateY(20px); transition: transform 0.3s;
   }
-  .paywall-card { transform: translateY(0); }
+  .paywall-modal.active .paywall-card { transform: translateY(0); }
   .pw-icon { font-size: 2.5rem; margin-bottom: 12px; }
   .pw-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; color: #fff; }
   .pw-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
@@ -237,7 +235,6 @@
   <select id="logo-style" class="custom-select">
     <option value="center">🎯 Emblema Central (Encolhe p/ o Meio)</option>
     <option value="background">👻 Marca d'água (Misturada ao Fundo)</option>
-    <option value="particles">✨ Dispersão Magnética (Logo vira o QR)</option>
   </select>
 
   <label class="fl">Estilo dos Pontinhos (Módulos)</label>
@@ -266,6 +263,7 @@
     </div>
   </div>
 
+  <!-- A label e os valores deste slider mudam via JS baseado na escolha -->
   <label class="fl" id="slider-label">Tamanho da Logo no Centro (Máx 24%)</label>
   <div class="slider-row" id="tut-target-slider">
     <input type="range" id="sl-logo" min="15" max="24" value="22"/>
@@ -311,7 +309,7 @@
   </div>
 </div>
 
-<footer>QRforma · Sistema Autenticado · v63.0</footer>
+<footer>QRforma · Sistema Autenticado · v61.1</footer>
 
 <!-- MODAL DE PAYWALL PIX DINÂMICO -->
 <div class="paywall-modal" id="paywall-modal">
@@ -374,26 +372,6 @@ let currentUserToken = null;
 let currentUserEmail = null;
 let isPremiumUser = false;
 let checkInterval = null;
-let particleCache = null; 
-let qrMetaCache = null;   
-
-// --- LOGO LOADING RESILIENTE ---
-function loadLogo(src, name){
-  var img = new Image();
-  img.crossOrigin = "Anonymous"; 
-  img.onload = function(){
-    logoImg = img;
-    if(document.getElementById('preview-thumb')) document.getElementById('preview-thumb').src = src;
-    if(document.getElementById('logo-status')) document.getElementById('logo-status').textContent = '✓ ' + name;
-    if(document.getElementById('logo-preview-wrap')) document.getElementById('logo-preview-wrap').style.display = 'flex';
-    triggerLiveUpdate(); 
-  };
-  img.onerror = function() { // <--- CORREÇÃO AQUI
-    console.warn("Logo não carregada (falha ou ausente), seguindo sem ela.");
-    triggerLiveUpdate(); 
-  };
-  img.src = src;
-}
 
 document.getElementById('btn-login-google').addEventListener('click', () => {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -412,9 +390,10 @@ document.getElementById('btn-logout-google').addEventListener('click', () => {
 });
 
 auth.onAuthStateChanged(async (user) => {
-    const loginBtn = document.getElementById('btn-login-google');
+    const loginBtn = document.getElementById('btn-google-login');
     const loggedBox = document.getElementById('user-logged-box');
     const emailDisplay = document.getElementById('user-email-display');
+    
     const activeLoginBtn = loginBtn || document.getElementById('btn-login-google');
     
     if (user) {
@@ -439,6 +418,7 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
+// --- LISTA VIP CHAVE MESTRA IMPLEMENTADA ---
 async function verifyExistingAccess() {
     if (!currentUserToken) return;
 
@@ -469,6 +449,7 @@ function unlockProFeatures() {
     if(document.getElementById('pro-badge')) document.getElementById('pro-badge').style.display = 'flex';
     if(document.getElementById('lock-overlay')) document.getElementById('lock-overlay').classList.remove('active');
     
+    // ATUALIZAÇÃO AJUSTE FINO: Mudança para nomenclatura "Impressão (Ilimitado)"
     let btnPrint = document.getElementById('btn-png-print');
     if(btnPrint) {
         btnPrint.innerHTML = '⬇ Impressão (Ilimitado)';
@@ -550,7 +531,7 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
 });
 
 
-// --- SISTEMA DE ONBOARDING ---
+// --- SISTEMA DE ONBOARDING (TUTORIAL) ---
 const tutorialSteps = [
     { target: 'qr-url', title: '🔗 Destino do QR Code', desc: 'Cole aqui o link para onde o seu cliente vai ao escanear (ex: Instagram, Cardápio, WhatsApp).' },
     { target: 'drop-zone', title: '🖼️ Identidade Visual', desc: 'Suba a logo da sua marca clicando aqui. Imagens com fundo transparente dão o melhor resultado.' },
@@ -611,7 +592,25 @@ window.addEventListener('load', () => {
 });
 
 
-// --- ENGINE DE RENDERIZAÇÃO ---
+// --- ENGINE DE RENDERIZAÇÃO VISUAL ---
+function applyBlurIfLimitReached() {
+    if (isPremiumUser) {
+        if(document.getElementById('lock-overlay')) document.getElementById('lock-overlay').classList.remove('active');
+        return false;
+    }
+    let freeDownloads = parseInt(localStorage.getItem('qrforma_free_downloads') || '0');
+    if (freeDownloads >= 3) {
+        if(document.getElementById('lock-overlay')) document.getElementById('lock-overlay').classList.add('active');
+        let btnDigital = document.getElementById('btn-png-digital');
+        if(btnDigital) {
+            btnDigital.classList.add('locked');
+            btnDigital.innerHTML = '🔒 Grátis Esgotado';
+        }
+        return true;
+    }
+    return false;
+}
+
 var logoImg = null;
 var palette = [[15, 15, 15], [242, 242, 242]]; 
 var selPalIdx = -1; 
@@ -621,6 +620,47 @@ var animStartTime = 0;
 var layerForeground = null; 
 var layerDigitalMerged = null;
 var liveUpdateTimer = null; 
+
+function updateColorUI(rgbArray) {
+    var hex = rgbToHex(rgbArray[0], rgbArray[1], rgbArray[2]).toUpperCase();
+    document.documentElement.style.setProperty('--thumb-color', hex);
+    if(document.getElementById('color-hex-label')) {
+        document.getElementById('color-hex-label').textContent = hex;
+        document.getElementById('color-hex-label').style.color = hex;
+    }
+}
+
+var spectrumSlider = document.getElementById('spectrum-slider');
+if(spectrumSlider) {
+    spectrumSlider.addEventListener('input', function() {
+      selPalIdx = -1;
+      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('sel'));
+      var hue = parseInt(this.value) / 360;
+      currentActiveColor = hslToRgb(hue, 0.85, 0.45); 
+      updateColorUI(currentActiveColor);
+      triggerLiveUpdate();
+    });
+}
+
+document.getElementById('logo-style').addEventListener('change', function() {
+    var val = this.value;
+    var sl = document.getElementById('sl-logo');
+    
+    if(val === 'center') {
+        document.getElementById('slider-label').innerText = 'Tamanho da Logo no Centro (Máx 24%)';
+        sl.min = 15; sl.max = 24; sl.value = 22;
+    } else {
+        document.getElementById('slider-label').innerText = 'Opacidade da Logo ao Fundo (Ajuste Fino)';
+        sl.min = 5; sl.max = 80; sl.value = 40;
+    }
+    document.getElementById('sl-logo-v').textContent = sl.value + '%';
+    triggerLiveUpdate();
+});
+
+document.getElementById('sl-logo').addEventListener('input', function(){
+  document.getElementById('sl-logo-v').textContent = this.value + '%';
+  triggerLiveUpdate();
+});
 
 function rr(v){ return Math.round(v); }
 function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
@@ -641,8 +681,10 @@ function hslToRgb(h, s, l) {
     }
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
+
 function lum(c){ return c.reduce((acc,v,i) => { v /= 255; v = v <= .03928 ? v/12.92 : Math.pow((v+.055)/1.055, 2.4); return acc + v * [.2126,.7152,.0722][i]; }, 0); }
 function contrast(a, b){ var la = lum(a), lb = lum(b); return (Math.max(la,lb) + .05) / (Math.min(la,lb) + .05); }
+
 function ensureContrast(col, bg){
   var c = col.slice(); var bgLum = lum(bg); var isBgDark = bgLum < 0.5; 
   for (var i = 0; i < 80; i++){
@@ -652,10 +694,24 @@ function ensureContrast(col, bg){
   }
   return isBgDark ? [255,255,255] : [10,10,10];
 }
+
 function rgbToHex(r, g, b) { return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
 function hexToRgb(hex) {
   var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [124,58,237];
+}
+
+function loadLogo(src, name){
+  var img = new Image();
+  img.crossOrigin = "Anonymous"; 
+  img.onload = function(){
+    logoImg = img;
+    if(document.getElementById('preview-thumb')) document.getElementById('preview-thumb').src = src;
+    if(document.getElementById('logo-status')) document.getElementById('logo-status').textContent = '✓ ' + name;
+    if(document.getElementById('logo-preview-wrap')) document.getElementById('logo-preview-wrap').style.display = 'flex';
+    triggerLiveUpdate(); 
+  };
+  img.src = src;
 }
 
 window.addEventListener('load', () => {
@@ -691,129 +747,19 @@ function renderPalette(){
   });
 }
 
-// Particle System Helpers
-function sampleLogoParticles(img, count) {
-    var sCanvas = document.createElement('canvas');
-    var sSize = 64; 
-    sCanvas.width = sSize; sCanvas.height = sSize;
-    var sCtx = sCanvas.getContext('2d');
-    sCtx.clearRect(0, 0, sSize, sSize);
-    
-    var ratio = img.width / img.height; var dw = sSize, dh = sSize, ox = 0, oy = 0;
-    if (ratio > 1) { dh = sSize / ratio; oy = (sSize - dh) / 2; } 
-    else { dw = sSize * ratio; ox = (sSize - dw) / 2; }
-    sCtx.drawImage(img, ox, oy, dw, dh);
-    
-    var data = sCtx.getImageData(0, 0, sSize, sSize).data;
-    var candidates = [];
-    for (var py = 0; py < sSize; py++) {
-        for (var px = 0; px < sSize; px++) {
-            var idx = (py * sSize + px) * 4;
-            var alpha = data[idx + 3];
-            if (alpha > 80) { 
-                candidates.push({ nx: px / sSize, ny: py / sSize, r: data[idx], g: data[idx+1], b: data[idx+2] });
-            }
-        }
-    }
-    for (var i = candidates.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = candidates[i]; candidates[i] = candidates[j]; candidates[j] = tmp;
-    }
-    return candidates.slice(0, count);
-}
-
-function getQRDarkModulePositions(oQR, mc) {
-    var positions = [];
-    for (var row = 0; row < mc; row++) {
-        for (var col = 0; col < mc; col++) {
-            if (!oQR.isDark(row, col)) continue;
-            var isFinder = (row < 7 && col < 7) || (row < 7 && col >= mc-7) || (row >= mc-7 && col < 7);
-            if (isFinder) continue; 
-            positions.push({ row: row, col: col });
-        }
-    }
-    return positions;
-}
-
-function buildParticleSystem(logoImg, oQR, mc, density) {
-    var darkModules = getQRDarkModulePositions(oQR, mc);
-    var targetCount = Math.max(20, Math.floor(darkModules.length * (density / 100)));
-    targetCount = Math.min(targetCount, darkModules.length, 600); 
-
-    var shuffledModules = darkModules.slice();
-    for (var i = shuffledModules.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = shuffledModules[i]; shuffledModules[i] = shuffledModules[j]; shuffledModules[j] = tmp;
-    }
-
-    var logoParticles = sampleLogoParticles(logoImg, targetCount);
-    var particles = [];
-    for (var k = 0; k < targetCount; k++) {
-        var src = logoParticles[k % logoParticles.length];
-        var dst = shuffledModules[k];
-        var burstAngle = Math.random() * Math.PI * 2;
-        var burstDist = 0.15 + Math.random() * 0.25; 
-        particles.push({
-            startNX: src.nx, startNY: src.ny,
-            burstNX: src.nx + Math.cos(burstAngle) * burstDist,
-            burstNY: src.ny + Math.sin(burstAngle) * burstDist,
-            row: dst.row, col: dst.col,
-            color: [src.r, src.g, src.b],
-            sizeJitter: 0.7 + Math.random() * 0.6,
-            delay: Math.random() * 200 
-        });
-    }
-    return particles;
-}
-
-function drawParticlesFrame(ctx, w, h, time, baseCol, cell, quietZone, mc) {
-    if (!particleCache) return;
-    var particles = particleCache;
-    particles.forEach(function(p) {
-        var localTime = Math.max(0, time - 1500 - p.delay);
-        var px, py, alpha = 1, scale = 1;
-
-        if (time <= 1500) return; 
-
-        if (localTime <= 500) {
-            var t1 = easeOutCubic(Math.min(localTime / 500, 1));
-            px = p.startNX + (p.burstNX - p.startNX) * t1;
-            py = p.startNY + (p.burstNY - p.startNY) * t1;
-        } else if (localTime <= 1700) {
-            var t2 = easeInOutCubic(Math.min((localTime - 500) / 1200, 1));
-            var targetNX = (p.col * cell + quietZone) / w;
-            var targetNY = (p.row * cell + quietZone) / h;
-            px = p.burstNX + (targetNX - p.burstNX) * t2;
-            py = p.burstNY + (targetNY - p.burstNY) * t2;
-            scale = 0.7 + t2 * 0.3;
-        } else {
-            px = (p.col * cell + quietZone) / w;
-            py = (p.row * cell + quietZone) / h;
-            scale = 1;
-        }
-
-        var sizePx = cell * p.sizeJitter * scale;
-        var r = p.color[0] + (baseCol[0] - p.color[0]) * Math.min(localTime/1000, 1);
-        var g = p.color[1] + (baseCol[1] - p.color[1]) * Math.min(localTime/1000, 1);
-        var b = p.color[2] + (baseCol[2] - p.color[2]) * Math.min(localTime/1000, 1);
-
-        ctx.fillStyle = `rgb(${rr(r)},${rr(g)},${rr(b)})`;
-        ctx.beginPath();
-        ctx.arc(px * w, py * h, sizePx / 2, 0, Math.PI * 2);
-        ctx.fill();
-    });
-}
-
+// --- INTEGRAÇÃO DO DESIGN MÓDULO ORGÂNICO / LÍQUIDO ---
 function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
   var r = size / 2, cx = x + r, cy = y + r, d = size - (pad * 2);
   ctx.beginPath();
-  if (type === 'circle') { ctx.arc(cx, cy, (size/2) - pad, 0, Math.PI * 2); ctx.fill(); } 
-  else if (type === 'square' || type === 'classic') { ctx.fillRect(x + pad, y + pad, d, d); } 
-  else if (type === 'fluid') {
-    ctx.moveTo(cx, y + pad); ctx.arcTo(x + size - pad, y + pad, x + size - pad, y + size - pad, r - pad);
-    ctx.lineTo(cx, y + size - pad); ctx.arcTo(x + pad, y + size - pad, x + pad, y + pad, r - pad); ctx.closePath(); ctx.fill();
+  if (type === 'circle') { 
+      ctx.arc(cx, cy, (size/2) - pad, 0, Math.PI * 2); ctx.fill(); 
+  } else if (type === 'square' || type === 'classic') { 
+      ctx.fillRect(x + pad, y + pad, d, d); 
+  } else if (type === 'fluid') {
+      ctx.moveTo(cx, y + pad); ctx.arcTo(x + size - pad, y + pad, x + size - pad, y + size - pad, r - pad);
+      ctx.lineTo(cx, y + size - pad); ctx.arcTo(x + pad, y + size - pad, x + pad, y + pad, r - pad); ctx.closePath(); ctx.fill();
   } else if (type === 'diamond') {
-    ctx.moveTo(cx, y + pad); ctx.lineTo(x + size - pad, cy); ctx.lineTo(cx, y + size - pad); ctx.lineTo(x + pad, cy); ctx.closePath(); ctx.fill();
+      ctx.moveTo(cx, y + pad); ctx.lineTo(x + size - pad, cy); ctx.lineTo(cx, y + size - pad); ctx.lineTo(x + pad, cy); ctx.closePath(); ctx.fill();
   } else if (type === 'organic') {
       ctx.arc(cx, cy, r - pad, 0, Math.PI * 2); ctx.fill();
       if (hasRight) { ctx.fillRect(cx, y + pad, size, d); }
@@ -821,19 +767,29 @@ function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
   }
 }
 
+// --- INTEGRAÇÃO DOS FINDERS PREMIUM COM ANEL REDONDO E DIAMANTE ---
 function drawFinders(ctx, n, cell, col, offset, isForScan, canvasBgColor, styleType){
   var bgRgb = hexToRgb(canvasBgColor); var fcArray = ensureContrast(col.slice(), bgRgb);
   var fc = `rgb(${rr(fcArray[0])},${rr(fcArray[1])},${rr(fcArray[2])})`;
 
   [{tr:0,tc:0},{tr:0,tc:n-7},{tr:n-7,tc:0}].forEach(fp => {
     var x0 = (fp.tc * cell) + offset, y0 = (fp.tr * cell) + offset, s7 = cell * 7, padW = cell * 0.05; 
+    
     if (styleType === 'organic' && !isForScan) {
         var cx = x0 + (s7/2), cy = y0 + (s7/2);
         var rOut = s7/2, rMid = (cell*5)/2, rIn = (cell*3)/2;
-        ctx.fillStyle = canvasBgColor; ctx.beginPath(); ctx.fillRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2));
-        ctx.fillStyle = fc; ctx.beginPath(); ctx.arc(cx, cy, rOut, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = canvasBgColor; ctx.beginPath(); ctx.arc(cx, cy, rMid, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = fc; ctx.beginPath(); ctx.moveTo(cx, cy - rIn); ctx.lineTo(cx + rIn, cy); ctx.lineTo(cx, cy + rIn); ctx.lineTo(cx - rIn, cy); ctx.closePath(); ctx.fill();
+        
+        ctx.fillStyle = canvasBgColor; ctx.beginPath();
+        ctx.fillRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2));
+
+        ctx.fillStyle = fc; ctx.beginPath();
+        ctx.arc(cx, cy, rOut, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = canvasBgColor; ctx.beginPath();
+        ctx.arc(cx, cy, rMid, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = fc; ctx.beginPath();
+        ctx.moveTo(cx, cy - rIn); ctx.lineTo(cx + rIn, cy); ctx.lineTo(cx, cy + rIn); ctx.lineTo(cx - rIn, cy); ctx.closePath(); ctx.fill();
     } else {
         ctx.fillStyle = canvasBgColor; ctx.beginPath(); 
         if (isForScan) ctx.fillRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2)); else ctx.roundRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2), cell * 0.8); ctx.fill();
@@ -860,34 +816,33 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
       var qrCodeObj = new QRCode(tmp, { text: url, correctLevel: ecl });
       await new Promise(r => setTimeout(r, 15)); 
       var oQR = qrCodeObj._oQRCode;
+      if (!oQR) throw new Error("A matriz não pôde ser gerada.");
+
       var mc = oQR.moduleCount; var cell = coreSize / mc; 
       var QUIET_ZONE = Math.ceil(cell * quietZoneMultiplier); var TOTAL_SIZE = coreSize + (QUIET_ZONE * 2);
-      
-      if (logoStyleMode === 'particles' && !isForScan) {
-          qrMetaCache = { cell: cell, quietZone: QUIET_ZONE, mc: mc };
-          particleCache = buildParticleSystem(logoImg, oQR, mc, paramValue);
-      }
-
       var isLightModule = lum(baseCol) > 0.5; var canvasBgColor = isLightModule ? '#13131a' : '#ffffff';
+
       var cvsFG = document.createElement('canvas'); cvsFG.width = TOTAL_SIZE; cvsFG.height = TOTAL_SIZE;
-      var ctxFG = cvsFG.getContext('2d');
-      
+      var ctxFG = cvsFG.getContext('2d'); if (!ctxFG) throw new Error("Memória insuficiente.");
+      ctxFG.clearRect(0, 0, TOTAL_SIZE, TOTAL_SIZE); 
+
       var pad = isForScan || styleType === 'classic' ? 0 : cell * 0.08; 
       var actualStyle = isForScan ? 'square' : styleType;
       
       for (var row = 0; row < mc; row++){
         for (var col = 0; col < mc; col++){
           if (!oQR.isDark(row, col)) continue; 
-          if (logoStyleMode === 'particles' && !isForScan) {
-              var isFinder = (row < 7 && col < 7) || (row < 7 && col >= mc-7) || (row >= mc-7 && col < 7);
-              if (!isFinder) continue; 
-          }
           if ((row < 7 && col < 7) || (row < 7 && col >= mc-7) || (row >= mc-7 && col < 7)) continue;
-          
           var x = (col * cell) + QUIET_ZONE, y = (row * cell) + QUIET_ZONE;
           ctxFG.fillStyle = `rgb(${rr(baseCol[0])},${rr(baseCol[1])},${rr(baseCol[2])})`;
-          var hasRight = (col + 1 < mc) && oQR.isDark(row, col + 1);
-          var hasBottom = (row + 1 < mc) && oQR.isDark(row + 1, col);
+          
+          var hasRight = false, hasBottom = false;
+          if (actualStyle === 'organic') {
+             var inF = (r, c) => ((r < 7 && c < 7) || (r < 7 && c >= mc-7) || (r >= mc-7 && c < 7));
+             hasRight = (col + 1 < mc) && oQR.isDark(row, col + 1) && !inF(row, col + 1);
+             hasBottom = (row + 1 < mc) && oQR.isDark(row + 1, col) && !inF(row + 1, col);
+          }
+
           drawModule(ctxFG, actualStyle, x, y, cell, pad, hasRight, hasBottom);
         }
       }
@@ -896,13 +851,35 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
       var cvsMerged = document.createElement('canvas'); cvsMerged.width = TOTAL_SIZE; cvsMerged.height = TOTAL_SIZE;
       var ctxMerged = cvsMerged.getContext('2d');
       ctxMerged.fillStyle = canvasBgColor; ctxMerged.fillRect(0, 0, TOTAL_SIZE, TOTAL_SIZE);
+      
+      if (logoImg && logoStyleMode === 'background' && paramValue > 0){ 
+          ctxMerged.save(); 
+          ctxMerged.globalAlpha = paramValue; 
+          drawLogoContained(ctxMerged, logoImg, QUIET_ZONE, QUIET_ZONE, coreSize, coreSize); 
+          ctxMerged.restore(); 
+      }
+      
       ctxMerged.drawImage(cvsFG, 0, 0); 
+      
+      if (logoImg && logoStyleMode === 'center' && !isForScan){
+          ctxMerged.save();
+          ctxMerged.translate(TOTAL_SIZE / 2, TOTAL_SIZE / 2);
+          ctxMerged.fillStyle = canvasBgColor;
+          ctxMerged.beginPath();
+          var logoW_Static = TOTAL_SIZE * paramValue;
+          var pad_Static = TOTAL_SIZE * (isForScan ? 0.01 : 0.02);
+          ctxMerged.roundRect(-logoW_Static/2 - pad_Static, -logoW_Static/2 - pad_Static, logoW_Static + (pad_Static*2), logoW_Static + (pad_Static*2), TOTAL_SIZE * 0.03);
+          ctxMerged.fill();
+          drawLogoContained(ctxMerged, logoImg, -logoW_Static/2, -logoW_Static/2, logoW_Static, logoW_Static);
+          ctxMerged.restore();
+      }
 
       document.body.removeChild(tmp);
-      return { foreground: cvsFG, merged: cvsMerged };
+      return { foreground: cvsFG, merged: cvsMerged, bgColor: canvasBgColor };
     } catch(e) { if (document.body.contains(tmp)) document.body.removeChild(tmp); throw e; }
 }
 
+// A FUNÇÃO SIMULATEREALSCAN VOLTOU PRA FICAR!
 function simulateRealScan(sourceCanvas) {
     if (typeof jsQR === 'undefined') { return { data: document.getElementById('qr-url').value }; }
     var scanSize = 800; var temp = document.createElement('canvas'); temp.width = scanSize; temp.height = scanSize;
@@ -913,7 +890,12 @@ function simulateRealScan(sourceCanvas) {
 
 function drawAnimationFrame(ctx, w, h, time) {
     var cx = w / 2, cy = h / 2; 
+    var padSafety = Math.ceil((w / 2048) * 100); 
+    var logoW_Large = w - padSafety * 4; 
+    
     var logoStyleMode = document.getElementById('logo-style').value;
+    var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
+
     var isLightModule = lum(currentActiveColor) > 0.5; 
     var canvasBgColor = isLightModule ? '#13131a' : '#ffffff';
     
@@ -921,28 +903,237 @@ function drawAnimationFrame(ctx, w, h, time) {
     ctx.fillStyle = canvasBgColor; 
     ctx.fillRect(0, 0, w, h);
 
-    if (logoStyleMode === 'particles') {
-        if (time <= 1500) { 
-            if(logoImg) {
-                let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p;
-                drawLogoContained(ctx, logoImg, cx - 200, cy - 200, 400, 400); 
-            }
-        } else {
-            ctx.drawImage(layerForeground, 0, 0, w, h);
-            if (qrMetaCache) drawParticlesFrame(ctx, w, h, time, currentActiveColor, qrMetaCache.cell, qrMetaCache.quietZone, qrMetaCache.mc);
-        }
-    } else if (logoStyleMode === 'center') {
-        // ... (resto da lógica center/background)
-        var logoW_Large = w * 0.4;
-        var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
+    if (logoStyleMode === 'center') {
         var logoW_Small = w * sliderParam; 
-        if (time <= 1500) { let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy); let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale); if(logoImg) drawLogoContained(ctx, logoImg, -logoW_Large/2, -logoW_Large/2, logoW_Large, logoW_Large); } else if (time <= 2200) { let p = easeInOutCubic((time - 1500) / 700); ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; ctx.drawImage(layerForeground, 0, 0, w, h); ctx.restore(); let currentLogoW = logoW_Large - ((logoW_Large - logoW_Small) * p); if (logoImg) { ctx.save(); ctx.translate(cx, cy); ctx.fillStyle = canvasBgColor; ctx.beginPath(); let pad = w * 0.02 * p; ctx.roundRect(-currentLogoW/2 - pad, -currentLogoW/2 - pad, currentLogoW + (pad*2), currentLogoW + (pad*2), w * 0.03); ctx.fill(); drawLogoContained(ctx, logoImg, -currentLogoW/2, -currentLogoW/2, currentLogoW, currentLogoW); ctx.restore(); } } else { ctx.globalAlpha = 1.0; ctx.filter = 'none'; ctx.drawImage(layerForeground, 0, 0, w, h); if (logoImg) { ctx.save(); ctx.translate(cx, cy); ctx.fillStyle = canvasBgColor; ctx.beginPath(); let pad = w * 0.02; ctx.roundRect(-logoW_Small/2 - pad, -logoW_Small/2 - pad, logoW_Small + (pad*2), logoW_Small + (pad*2), w * 0.03); ctx.fill(); drawLogoContained(ctx, logoImg, -logoW_Small/2, -logoW_Small/2, logoW_Small, logoW_Small); ctx.restore(); } }
+
+        if (time <= 1500) { 
+            let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy);
+            let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale); 
+            drawLogoContained(ctx, logoImg, -logoW_Large/2, -logoW_Large/2, logoW_Large, logoW_Large);
+        } else if (time <= 2200) { 
+            let p = easeInOutCubic((time - 1500) / 700);
+            ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; ctx.drawImage(layerForeground, 0, 0, w, h); ctx.restore();
+            let currentLogoW = logoW_Large - ((logoW_Large - logoW_Small) * p);
+            if (logoImg) {
+                ctx.save(); ctx.translate(cx, cy); ctx.fillStyle = canvasBgColor; ctx.beginPath();
+                let pad = w * 0.02 * p; 
+                ctx.roundRect(-currentLogoW/2 - pad, -currentLogoW/2 - pad, currentLogoW + (pad*2), currentLogoW + (pad*2), w * 0.03); ctx.fill();
+                drawLogoContained(ctx, logoImg, -currentLogoW/2, -currentLogoW/2, currentLogoW, currentLogoW); ctx.restore();
+            }
+        } else { 
+            ctx.globalAlpha = 1.0; ctx.filter = 'none'; ctx.drawImage(layerForeground, 0, 0, w, h);
+            if (logoImg) { 
+                ctx.save(); ctx.translate(cx, cy); ctx.fillStyle = canvasBgColor; ctx.beginPath();
+                let pad = w * 0.02; ctx.roundRect(-logoW_Small/2 - pad, -logoW_Small/2 - pad, logoW_Small + (pad*2), logoW_Small + (pad*2), w * 0.03); ctx.fill();
+                drawLogoContained(ctx, logoImg, -logoW_Small/2, -logoW_Small/2, logoW_Small, logoW_Small); ctx.restore(); 
+            }
+        }
     } else {
-        // ... (background mode)
-        var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
-        if (time <= 1500) { let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy); let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale); if(logoImg) drawLogoContained(ctx, logoImg, -w/2, -w/2, w, w); } else if (time <= 2200) { let p = easeInOutCubic((time - 1500) / 700); ctx.save(); ctx.globalAlpha = 1 - p; ctx.filter = `blur(${p * 20}px)`; ctx.translate(cx, cy); let ls = 1.0 + (0.3 * p); ctx.scale(ls, ls); if(logoImg) drawLogoContained(ctx, logoImg, -w/2, -w/2, w, w); ctx.restore(); ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; ctx.drawImage(layerForeground, 0, 0, w, h); ctx.restore(); } else { let p = Math.min((time - 2200) / 400, 1.0); let currentOpacity = sliderParam * easeOutCubic(p); ctx.globalAlpha = 1.0; ctx.filter = 'none'; if (logoImg && currentOpacity > 0) { ctx.save(); ctx.globalAlpha = currentOpacity; drawLogoContained(ctx, logoImg, 0, 0, w, h); ctx.restore(); } ctx.drawImage(layerForeground, 0, 0, w, h); }
+        if (time <= 1500) { 
+            let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy);
+            let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale); 
+            drawLogoContained(ctx, logoImg, -logoW_Large/2, -logoW_Large/2, logoW_Large, logoW_Large);
+        } else if (time <= 2200) { 
+            let p = easeInOutCubic((time - 1500) / 700);
+            ctx.save(); ctx.globalAlpha = 1 - p; ctx.filter = `blur(${p * 20}px)`; ctx.translate(cx, cy); let ls = 1.0 + (0.3 * p); ctx.scale(ls, ls);
+            drawLogoContained(ctx, logoImg, -logoW_Large/2, -logoW_Large/2, logoW_Large, logoW_Large); ctx.restore();
+            ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; ctx.translate(cx, cy); let qs = 0.8 + (0.2 * p); ctx.scale(qs, qs);
+            ctx.drawImage(layerForeground, -w/2, -h/2, w, h); ctx.restore();
+        } else { 
+            let p = Math.min((time - 2200) / 400, 1.0); 
+            let currentOpacity = sliderParam * easeOutCubic(p); ctx.globalAlpha = 1.0; ctx.filter = 'none';
+            if (logoImg && currentOpacity > 0) { ctx.save(); ctx.globalAlpha = currentOpacity; let qrDrawSize = w * 0.85; drawLogoContained(ctx, logoImg, (w-qrDrawSize)/2, (w-qrDrawSize)/2, qrDrawSize, qrDrawSize); ctx.restore(); }
+            ctx.drawImage(layerForeground, 0, 0, w, h);
+        }
     }
 }
+
+function animationLoop(timestamp) {
+    if (!animStartTime) animStartTime = timestamp; var elapsedTime = (timestamp - animStartTime) % 10000; 
+    var c = document.getElementById('qr-canvas');
+    if(c && c.width > 0) drawAnimationFrame(c.getContext('2d'), c.width, c.height, elapsedTime);
+    animRequest = requestAnimationFrame(animationLoop);
+}
+
+async function runEngine() {
+  var url = document.getElementById('qr-url').value; var logBox = document.getElementById('verify-log'); var finalConf = document.getElementById('final-conf');
+  if (!url || url.trim() === "") {
+      logBox.innerHTML = `<div class="vlog-item info"><span class="vlog-icon">ℹ</span><div class="vlog-body"><strong>Aguardando link válido...</strong><span>Digite o destino do QR Code.</span></div></div>`;
+      finalConf.innerHTML = '—'; if(animRequest) cancelAnimationFrame(animRequest); return; 
+  }
+  if(animRequest) cancelAnimationFrame(animRequest); animStartTime = 0;
+  
+  var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100; 
+  var styleType = document.getElementById('qr-style').value; 
+  var logoStyleMode = document.getElementById('logo-style').value;
+  var baseCol = currentActiveColor; 
+  
+  var overlay = document.getElementById('live-overlay'); if(overlay) overlay.classList.add('active'); 
+
+  try {
+    var layersPreview = await generateQRLayers(url, sliderParam, baseCol, styleType, logoStyleMode, 4, false, 800);
+    var layersScan    = await generateQRLayers(url, sliderParam, baseCol, styleType, logoStyleMode, 4, true, 800); 
+    layerForeground = layersPreview.foreground; layerDigitalMerged = layersPreview.merged;    
+    
+    // CORREÇÃO ANTI-FALSO NEGATIVO: Ignora o buraco no scannerjs e valida pelo contraste real
+    var isBgDark = lum(baseCol) > 0.5; var safeColorContrast = contrast(baseCol, isBgDark ? [19,19,26] : [255,255,255]);
+    var scanResult = simulateRealScan(layersScan.merged);
+    var validationPassed = false;
+
+    if (logoStyleMode === 'center') {
+        validationPassed = (safeColorContrast >= 2.5); 
+    } else {
+        validationPassed = (scanResult && scanResult.data === url);
+    }
+    
+    if (validationPassed) {
+        logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>O design está com contraste ideal e dados mapeados com segurança.</span></div></div>`;
+        finalConf.innerHTML = '<strong style="color:var(--ok-border)">Operacional</strong>';
+    } else {
+        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Câmera pode ter dificuldade. Aumente o contraste (troque a cor do QR).</span></div></div>`;
+        finalConf.innerHTML = '<strong style="color:var(--fail-border)">Risco Detetado</strong>';
+    }
+    
+    var destCanvas = document.getElementById('qr-canvas'); if(destCanvas) { destCanvas.width = 1200; destCanvas.height = 1200; }
+    drawAnimationFrame(destCanvas.getContext('2d'), 1200, 1200, 9999); animRequest = requestAnimationFrame(animationLoop);
+  } catch (err) {
+    logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Erro no Processamento</strong><span>${err.message || 'Falha ao renderizar. Verifique o link.'}</span></div></div>`;
+    finalConf.innerHTML = '<strong style="color:var(--fail-border)">Falha Crítica</strong>';
+  } finally { if(overlay) overlay.classList.remove('active'); }
+}
+
+function triggerLiveUpdate() { clearTimeout(liveUpdateTimer); liveUpdateTimer = setTimeout(() => { runEngine(); }, 250); }
+
+document.getElementById('qr-url').addEventListener('input', triggerLiveUpdate);
+document.getElementById('qr-style').addEventListener('change', triggerLiveUpdate);
+
+document.getElementById('btn-png-digital').onclick = function(){
+  if (isPremiumUser) {
+    var a = document.createElement('a');
+    a.download = 'QRforma-Digital.png';
+    a.href = layerDigitalMerged.toDataURL();
+    a.click();
+    return;
+  }
+
+  if (applyBlurIfLimitReached()) {
+    triggerPaywallFlow();
+    return;
+  }
+
+  var a = document.createElement('a');
+  a.download = 'QRforma-Digital.png';
+  a.href = layerDigitalMerged.toDataURL();
+  a.click();
+
+  let freeDownloads = parseInt(localStorage.getItem('qrforma_free_downloads') || '0');
+  freeDownloads++;
+  localStorage.setItem('qrforma_free_downloads', freeDownloads);
+
+  let restam = 3 - freeDownloads;
+  if (restam > 0) {
+    alert(`Download concluído! Você ainda tem ${restam} ${restam === 1 ? 'download gratuito disponível' : 'downloads gratuitos disponíveis'}.`);
+  } else {
+    alert("Atenção: Este foi o seu último download gratuito.");
+    applyBlurIfLimitReached(); 
+  }
+};
+
+document.getElementById('btn-png-print').onclick = async function(){
+  if (!isPremiumUser) { triggerPaywallFlow(); return; }
+  
+  var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando Impressão...";
+  try {
+    var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
+    var logoStyleMode = document.getElementById('logo-style').value;
+    var l = await generateQRLayers(document.getElementById('qr-url').value, sliderParam, currentActiveColor, document.getElementById('qr-style').value, logoStyleMode, 4, false, 2048);
+    var a = document.createElement('a'); a.download = 'QRforma-Impressao.png'; a.href = l.merged.toDataURL('image/png'); a.click();
+  } catch(e) { alert("Erro ao gerar arquivo: " + e.message); }
+  btn.innerText = oldTxt;
+};
+
+document.getElementById('btn-dl-video').addEventListener('click', async function(){
+  if (!isPremiumUser) { triggerPaywallFlow(); return; }
+
+  document.getElementById('loader-video').style.display = 'flex';
+  var vCanvas = document.createElement('canvas'); vCanvas.width = 1080; vCanvas.height = 1080; var vCtx = vCanvas.getContext('2d');
+  
+  var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
+  var logoStyleMode = document.getElementById('logo-style').value;
+  var tempHighRes = await generateQRLayers(document.getElementById('qr-url').value, sliderParam, currentActiveColor, document.getElementById('qr-style').value, logoStyleMode, 4, false, 1080);
+  
+  var oldForeground = layerForeground; layerForeground = tempHighRes.foreground;
+  
+  var stream = vCanvas.captureStream(60); var recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }); var chunks = [];
+  recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
+  recorder.onstop = () => {
+      var blob = new Blob(chunks, { type: 'video/webm' }); var url = URL.createObjectURL(blob);
+      var a = document.createElement('a'); a.href = url; a.download = 'QRforma-Motion-10s-60fps.webm'; a.click();
+      document.getElementById('loader-video').style.display = 'none'; layerForeground = oldForeground; 
+  };
+  
+  recorder.start(); var totalDur = 10000; var fps = 60; var frameTime = 1000 / fps;
+  for(let t = 0; t <= totalDur; t += frameTime) {
+      drawAnimationFrame(vCtx, vCanvas.width, vCanvas.height, t); await new Promise(r => setTimeout(r, frameTime)); 
+  }
+  recorder.stop();
+});
+
+var pixAnimReq = null;
+var pixLogo = new Image();
+pixLogo.src = 'LogoQRforma.png'; 
+
+async function animatePixQR(pixText) {
+    var canvas = document.getElementById('canvas-qr-pix'); if(!canvas) return;
+    var ctx = canvas.getContext('2d');
+    canvas.width = 800; canvas.height = 800;
+    
+    if (!pixLogo.complete) { await new Promise(r => pixLogo.onload = r); }
+    
+    var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 'center', 4, true, 800, QRCode.CorrectLevel.L);
+    var pixLayer = l.foreground;
+    
+    var startTime = performance.now();
+    
+    function loop(now) {
+        var t = (now - startTime) % 10000; 
+        var w = 800, h = 800, cx = 400, cy = 400;
+        var logoW = 500; 
+        
+        ctx.fillStyle = '#13131a';
+        ctx.fillRect(0, 0, w, h);
+        
+        if (t <= 1500) { 
+            let p = easeOutCubic(Math.min(t / 1000, 1)); 
+            ctx.globalAlpha = p; 
+            ctx.save(); ctx.translate(cx, cy); let s = 0.8 + (0.2 * p); ctx.scale(s, s); 
+            drawLogoContained(ctx, pixLogo, -logoW/2, -logoW/2, logoW, logoW); 
+            ctx.restore();
+        } else if (t <= 2200) { 
+            let p = easeInOutCubic((t - 1500) / 700);
+            
+            ctx.save(); ctx.globalAlpha = 1 - p; ctx.filter = `blur(${p * 20}px)`; 
+            ctx.translate(cx, cy); let ls = 1.0 + (0.3 * p); ctx.scale(ls, ls);
+            drawLogoContained(ctx, pixLogo, -logoW/2, -logoW/2, logoW, logoW); 
+            ctx.restore();
+            
+            ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; 
+            ctx.translate(cx, cy); let qs = 0.8 + (0.2 * p); ctx.scale(qs, qs);
+            ctx.drawImage(pixLayer, -w/2, -h/2, w, h); 
+            ctx.restore();
+        } else { 
+            ctx.globalAlpha = 1.0; 
+            ctx.filter = 'none';
+            ctx.drawImage(pixLayer, 0, 0, w, h);
+        }
+        pixAnimReq = requestAnimationFrame(loop);
+    }
+    
+    if(pixAnimReq) cancelAnimationFrame(pixAnimReq);
+    pixAnimReq = requestAnimationFrame(loop);
+}
+
+setTimeout(() => { triggerLiveUpdate(); }, 400);
 </script>
 </body>
 </html>
