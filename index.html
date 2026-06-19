@@ -186,6 +186,7 @@
   footer{padding:16px;color:var(--muted);font-size:.68rem;font-family:'Space Mono',monospace;text-align:center}
 </style>
 
+<!-- SCRIPTS OFICIAIS DO SDK DO FIREBASE (V8 COMPAT) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
@@ -301,14 +302,15 @@
   <div class="actions" id="download-actions">
     <div class="actions-row">
       <button class="btn-sec btn-dl-digital" id="btn-png-digital">⬇ Tela Digital (Grátis)</button>
-      <button class="btn-sec btn-pro" id="btn-png-print">🔒 Imprimir 4K (PRO)</button>
+      <button class="btn-sec btn-pro" id="btn-png-print">🔒 Alta Resolução (PRO)</button>
     </div>
-    <button class="btn-sec btn-pro btn-dl-video" id="btn-dl-video">🎬 Baixar Vídeo Fluido 60FPS (PRO)</button>
+    <button class="btn-sec btn-pro btn-dl-video" id="btn-dl-video">🎬 Baixar Vídeo Full HD 60FPS (PRO)</button>
   </div>
 </div>
 
-<footer>QRforma · Sistema Autenticado · v60.0</footer>
+<footer>QRforma · Sistema Autenticado · v61.0</footer>
 
+<!-- MODAL DE PAYWALL PIX DINÂMICO -->
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
         <div class="pw-icon">🚀</div>
@@ -318,7 +320,7 @@
         <ul class="pw-features">
             <li>✅ Downloads ilimitados (Acesso Grátis esgotado)</li>
             <li>✅ <strong>Vídeos Fluidos 60FPS</strong> para Telões e Instagram</li>
-            <li>✅ <strong>Arquivos em 4K</strong> (Borda segura de 4 módulos) para Gráficas</li>
+            <li>✅ <strong>Arquivos Alta Resolução</strong> para Gráficas</li>
         </ul>
 
         <button class="btn-buy" id="btn-gerar-pix">Gerar PIX para Liberar (R$ 19,90)</button>
@@ -333,6 +335,7 @@
     </div>
 </div>
 
+<!-- ESTRUTURAS DO TUTORIAL (ONBOARDING) -->
 <div id="tutorial-overlay"></div>
 <div id="tutorial-dialog">
     <div class="tut-header">
@@ -446,16 +449,17 @@ function unlockProFeatures() {
     if(document.getElementById('pro-badge')) document.getElementById('pro-badge').style.display = 'flex';
     if(document.getElementById('lock-overlay')) document.getElementById('lock-overlay').classList.remove('active');
     
+    // Mudança para Ilimitado em todos e terminologia correta
     let btnPrint = document.getElementById('btn-png-print');
     if(btnPrint) {
-        btnPrint.innerHTML = '⬇ Imprimir 4K (Liberado)';
+        btnPrint.innerHTML = '⬇ Alta Resolução (Ilimitado)';
         btnPrint.classList.remove('btn-pro');
         btnPrint.classList.add('btn-dl-print');
     }
     
     let btnVideo = document.getElementById('btn-dl-video');
     if(btnVideo) {
-        btnVideo.innerHTML = '🎬 Baixar Vídeo 60FPS (Liberado)';
+        btnVideo.innerHTML = '🎬 Baixar Vídeo Full HD 60FPS (Ilimitado)';
         btnVideo.classList.remove('btn-pro');
     }
     
@@ -1037,12 +1041,12 @@ document.getElementById('btn-png-digital').onclick = function(){
 document.getElementById('btn-png-print').onclick = async function(){
   if (!isPremiumUser) { triggerPaywallFlow(); return; }
   
-  var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando 4K...";
+  var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando Alta Resolução...";
   try {
     var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
     var logoStyleMode = document.getElementById('logo-style').value;
     var l = await generateQRLayers(document.getElementById('qr-url').value, sliderParam, currentActiveColor, document.getElementById('qr-style').value, logoStyleMode, 4, false, 2048);
-    var a = document.createElement('a'); a.download = 'QRforma-Impressao-4K.png'; a.href = l.merged.toDataURL('image/png'); a.click();
+    var a = document.createElement('a'); a.download = 'QRforma-AltaRes.png'; a.href = l.merged.toDataURL('image/png'); a.click();
   } catch(e) { alert("Erro ao gerar arquivo: " + e.message); }
   btn.innerText = oldTxt;
 };
