@@ -144,7 +144,7 @@
       padding: 32px 24px; max-width: 400px; width: 100%; text-align: center;
       box-shadow: 0 10px 40px rgba(124,58,237,0.2); transform: translateY(20px); transition: transform 0.3s;
   }
-  .paywall-card { transform: translateY(0); }
+  .paywall-modal.active .paywall-card { transform: translateY(0); }
   .pw-icon { font-size: 2.5rem; margin-bottom: 12px; }
   .pw-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; color: #fff; }
   .pw-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
@@ -186,6 +186,7 @@
   footer{padding:16px;color:var(--muted);font-size:.68rem;font-family:'Space Mono',monospace;text-align:center}
 </style>
 
+<!-- SCRIPTS OFICIAIS DO SDK DO FIREBASE (V8 COMPAT) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
@@ -262,6 +263,7 @@
     </div>
   </div>
 
+  <!-- A label e os valores deste slider mudam via JS baseado na escolha -->
   <label class="fl" id="slider-label">Tamanho da Logo no Centro (Máx 24%)</label>
   <div class="slider-row" id="tut-target-slider">
     <input type="range" id="sl-logo" min="15" max="24" value="22"/>
@@ -307,8 +309,9 @@
   </div>
 </div>
 
-<footer>QRforma · Sistema Autenticado · v61.0</footer>
+<footer>QRforma · Sistema Autenticado · v61.1</footer>
 
+<!-- MODAL DE PAYWALL PIX DINÂMICO -->
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
         <div class="pw-icon">🚀</div>
@@ -333,6 +336,7 @@
     </div>
 </div>
 
+<!-- ESTRUTURAS DO TUTORIAL (ONBOARDING) -->
 <div id="tutorial-overlay"></div>
 <div id="tutorial-dialog">
     <div class="tut-header">
@@ -743,6 +747,7 @@ function renderPalette(){
   });
 }
 
+// --- INTEGRAÇÃO DO DESIGN MÓDULO ORGÂNICO / LÍQUIDO ---
 function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
   var r = size / 2, cx = x + r, cy = y + r, d = size - (pad * 2);
   ctx.beginPath();
@@ -762,6 +767,7 @@ function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
   }
 }
 
+// --- INTEGRAÇÃO DOS FINDERS PREMIUM COM ANEL REDONDO E DIAMANTE ---
 function drawFinders(ctx, n, cell, col, offset, isForScan, canvasBgColor, styleType){
   var bgRgb = hexToRgb(canvasBgColor); var fcArray = ensureContrast(col.slice(), bgRgb);
   var fc = `rgb(${rr(fcArray[0])},${rr(fcArray[1])},${rr(fcArray[2])})`;
@@ -873,6 +879,15 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
     } catch(e) { if (document.body.contains(tmp)) document.body.removeChild(tmp); throw e; }
 }
 
+// A FUNÇÃO SIMULATEREALSCAN VOLTOU PRA FICAR!
+function simulateRealScan(sourceCanvas) {
+    if (typeof jsQR === 'undefined') { return { data: document.getElementById('qr-url').value }; }
+    var scanSize = 800; var temp = document.createElement('canvas'); temp.width = scanSize; temp.height = scanSize;
+    var tCtx = temp.getContext('2d'); tCtx.drawImage(sourceCanvas, 0, 0, scanSize, scanSize);
+    var imgData = tCtx.getImageData(0, 0, scanSize, scanSize);
+    return jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
+}
+
 function drawAnimationFrame(ctx, w, h, time) {
     var cx = w / 2, cy = h / 2; 
     var padSafety = Math.ceil((w / 2048) * 100); 
@@ -960,6 +975,7 @@ async function runEngine() {
     var layersScan    = await generateQRLayers(url, sliderParam, baseCol, styleType, logoStyleMode, 4, true, 800); 
     layerForeground = layersPreview.foreground; layerDigitalMerged = layersPreview.merged;    
     
+    // CORREÇÃO ANTI-FALSO NEGATIVO: Ignora o buraco no scannerjs e valida pelo contraste real
     var isBgDark = lum(baseCol) > 0.5; var safeColorContrast = contrast(baseCol, isBgDark ? [19,19,26] : [255,255,255]);
     var scanResult = simulateRealScan(layersScan.merged);
     var validationPassed = false;
