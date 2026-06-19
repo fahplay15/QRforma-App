@@ -186,7 +186,6 @@
   footer{padding:16px;color:var(--muted);font-size:.68rem;font-family:'Space Mono',monospace;text-align:center}
 </style>
 
-<!-- SCRIPTS OFICIAIS DO SDK DO FIREBASE (V8 COMPAT) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
@@ -310,7 +309,6 @@
 
 <footer>QRforma · Sistema Autenticado · v60.0</footer>
 
-<!-- MODAL DE PAYWALL PIX DINÂMICO -->
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
         <div class="pw-icon">🚀</div>
@@ -335,7 +333,6 @@
     </div>
 </div>
 
-<!-- ESTRUTURAS DO TUTORIAL (ONBOARDING) -->
 <div id="tutorial-overlay"></div>
 <div id="tutorial-dialog">
     <div class="tut-header">
@@ -389,17 +386,20 @@ document.getElementById('btn-logout-google').addEventListener('click', () => {
 });
 
 auth.onAuthStateChanged(async (user) => {
-    const loginBtn = document.getElementById('btn-login-google');
+    const loginBtn = document.getElementById('btn-google-login');
     const loggedBox = document.getElementById('user-logged-box');
     const emailDisplay = document.getElementById('user-email-display');
+    
+    // Fallback caso o ID do botão mude na renderização
+    const activeLoginBtn = loginBtn || document.getElementById('btn-login-google');
     
     if (user) {
         currentUserEmail = user.email;
         currentUserToken = await user.getIdToken(true); 
         
-        emailDisplay.innerText = user.email;
-        loginBtn.style.display = 'none';
-        loggedBox.style.display = 'flex';
+        if(emailDisplay) emailDisplay.innerText = user.email;
+        if(activeLoginBtn) activeLoginBtn.style.display = 'none';
+        if(loggedBox) loggedBox.style.display = 'flex';
         
         await verifyExistingAccess();
     } else {
@@ -407,16 +407,27 @@ auth.onAuthStateChanged(async (user) => {
         currentUserEmail = null;
         isPremiumUser = false;
         
-        loginBtn.style.display = 'flex';
-        loggedBox.style.display = 'none';
-        document.getElementById('pro-badge').style.display = 'none';
+        if(activeLoginBtn) activeLoginBtn.style.display = 'flex';
+        if(loggedBox) loggedBox.style.display = 'none';
+        if(document.getElementById('pro-badge')) document.getElementById('pro-badge').style.display = 'none';
         
         applyBlurIfLimitReached();
     }
 });
 
+// --- LISTA VIP CHAVE MESTRA IMPLEMENTADA ---
 async function verifyExistingAccess() {
     if (!currentUserToken) return;
+
+    const emailsVIP = [
+        "qrforma@gmail.com"
+    ];
+
+    if (emailsVIP.includes(currentUserEmail)) {
+        unlockProFeatures(); 
+        return; 
+    }
+
     try {
         const checkRes = await fetch(`/api/checar-pagamento`, {
             headers: { 'Authorization': `Bearer ${currentUserToken}` }
@@ -432,23 +443,29 @@ async function verifyExistingAccess() {
 
 function unlockProFeatures() {
     isPremiumUser = true;
-    document.getElementById('pro-badge').style.display = 'flex';
-    document.getElementById('lock-overlay').classList.remove('active');
+    if(document.getElementById('pro-badge')) document.getElementById('pro-badge').style.display = 'flex';
+    if(document.getElementById('lock-overlay')) document.getElementById('lock-overlay').classList.remove('active');
     
     let btnPrint = document.getElementById('btn-png-print');
-    btnPrint.innerHTML = '⬇ Imprimir 4K (Liberado)';
-    btnPrint.classList.remove('btn-pro');
-    btnPrint.classList.add('btn-dl-print');
+    if(btnPrint) {
+        btnPrint.innerHTML = '⬇ Imprimir 4K (Liberado)';
+        btnPrint.classList.remove('btn-pro');
+        btnPrint.classList.add('btn-dl-print');
+    }
     
     let btnVideo = document.getElementById('btn-dl-video');
-    btnVideo.innerHTML = '🎬 Baixar Vídeo 60FPS (Liberado)';
-    btnVideo.classList.remove('btn-pro');
+    if(btnVideo) {
+        btnVideo.innerHTML = '🎬 Baixar Vídeo 60FPS (Liberado)';
+        btnVideo.classList.remove('btn-pro');
+    }
     
     let btnDigital = document.getElementById('btn-png-digital');
-    btnDigital.classList.remove('locked');
-    btnDigital.innerHTML = '⬇ Tela Digital (Ilimitado)';
+    if(btnDigital) {
+        btnDigital.classList.remove('locked');
+        btnDigital.innerHTML = '⬇ Tela Digital (Ilimitado)';
+    }
     
-    document.getElementById('paywall-modal').classList.remove('active');
+    if(document.getElementById('paywall-modal')) document.getElementById('paywall-modal').classList.remove('active');
     if (checkInterval) clearInterval(checkInterval);
 }
 
@@ -457,7 +474,7 @@ function triggerPaywallFlow() {
         alert("Por favor, faça login com o Google no topo da página antes de assinar a versão PRO.");
         return;
     }
-    document.getElementById('paywall-modal').classList.add('active');
+    if(document.getElementById('paywall-modal')) document.getElementById('paywall-modal').classList.add('active');
 }
 
 document.getElementById('btn-gerar-pix').addEventListener('click', async function() {
@@ -526,11 +543,10 @@ function showTutorialStep(stepIndex) {
     const dialog = document.getElementById('tutorial-dialog');
     
     if (stepIndex >= tutorialSteps.length) {
-        document.getElementById('tutorial-overlay').classList.remove('active');
-        dialog.classList.remove('active');
+        if(document.getElementById('tutorial-overlay')) document.getElementById('tutorial-overlay').classList.remove('active');
+        if(dialog) dialog.classList.remove('active');
         localStorage.setItem('qrforma_tutorial_done', 'true');
-        dialog.style.top = '';
-        dialog.style.bottom = '';
+        if(dialog) { dialog.style.top = ''; dialog.style.bottom = ''; }
         return;
     }
 
@@ -540,20 +556,18 @@ function showTutorialStep(stepIndex) {
     if (targetEl) {
         targetEl.classList.add('tut-highlight');
         if (step.target === 'download-actions') {
-            dialog.style.bottom = 'auto';
-            dialog.style.top = '30px'; 
+            if(dialog) { dialog.style.bottom = 'auto'; dialog.style.top = '30px'; }
             targetEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
         } else {
-            dialog.style.top = 'auto';
-            dialog.style.bottom = '30px'; 
+            if(dialog) { dialog.style.top = 'auto'; dialog.style.bottom = '30px'; }
             targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }
 
-    document.getElementById('tut-title').innerText = step.title;
-    document.getElementById('tut-desc').innerText = step.desc;
-    document.getElementById('tut-progress').innerText = `Passo ${stepIndex + 1} de ${tutorialSteps.length}`;
-    document.getElementById('btn-tut-next').innerText = stepIndex === tutorialSteps.length - 1 ? 'Concluir' : 'Próximo';
+    if(document.getElementById('tut-title')) document.getElementById('tut-title').innerText = step.title;
+    if(document.getElementById('tut-desc')) document.getElementById('tut-desc').innerText = step.desc;
+    if(document.getElementById('tut-progress')) document.getElementById('tut-progress').innerText = `Passo ${stepIndex + 1} de ${tutorialSteps.length}`;
+    if(document.getElementById('btn-tut-next')) document.getElementById('btn-tut-next').innerText = stepIndex === tutorialSteps.length - 1 ? 'Concluir' : 'Próximo';
 }
 
 document.getElementById('btn-tut-next').addEventListener('click', () => {
@@ -564,9 +578,11 @@ document.getElementById('btn-tut-next').addEventListener('click', () => {
 window.addEventListener('load', () => {
     if (!localStorage.getItem('qrforma_tutorial_done')) {
         setTimeout(() => {
-            document.getElementById('tutorial-overlay').classList.add('active');
-            document.getElementById('tutorial-dialog').style.bottom = '30px';
-            document.getElementById('tutorial-dialog').classList.add('active');
+            if(document.getElementById('tutorial-overlay')) document.getElementById('tutorial-overlay').classList.add('active');
+            if(document.getElementById('tutorial-dialog')) {
+                document.getElementById('tutorial-dialog').style.bottom = '30px';
+                document.getElementById('tutorial-dialog').classList.add('active');
+            }
         }, 800); 
     }
 });
@@ -575,15 +591,17 @@ window.addEventListener('load', () => {
 // --- ENGINE DE RENDERIZAÇÃO VISUAL ---
 function applyBlurIfLimitReached() {
     if (isPremiumUser) {
-        document.getElementById('lock-overlay').classList.remove('active');
+        if(document.getElementById('lock-overlay')) document.getElementById('lock-overlay').classList.remove('active');
         return false;
     }
     let freeDownloads = parseInt(localStorage.getItem('qrforma_free_downloads') || '0');
     if (freeDownloads >= 3) {
-        document.getElementById('lock-overlay').classList.add('active');
+        if(document.getElementById('lock-overlay')) document.getElementById('lock-overlay').classList.add('active');
         let btnDigital = document.getElementById('btn-png-digital');
-        btnDigital.classList.add('locked');
-        btnDigital.innerHTML = '🔒 Grátis Esgotado';
+        if(btnDigital) {
+            btnDigital.classList.add('locked');
+            btnDigital.innerHTML = '🔒 Grátis Esgotado';
+        }
         return true;
     }
     return false;
@@ -602,19 +620,23 @@ var liveUpdateTimer = null;
 function updateColorUI(rgbArray) {
     var hex = rgbToHex(rgbArray[0], rgbArray[1], rgbArray[2]).toUpperCase();
     document.documentElement.style.setProperty('--thumb-color', hex);
-    document.getElementById('color-hex-label').textContent = hex;
-    document.getElementById('color-hex-label').style.color = hex;
+    if(document.getElementById('color-hex-label')) {
+        document.getElementById('color-hex-label').textContent = hex;
+        document.getElementById('color-hex-label').style.color = hex;
+    }
 }
 
 var spectrumSlider = document.getElementById('spectrum-slider');
-spectrumSlider.addEventListener('input', function() {
-  selPalIdx = -1;
-  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('sel'));
-  var hue = parseInt(this.value) / 360;
-  currentActiveColor = hslToRgb(hue, 0.85, 0.45); 
-  updateColorUI(currentActiveColor);
-  triggerLiveUpdate();
-});
+if(spectrumSlider) {
+    spectrumSlider.addEventListener('input', function() {
+      selPalIdx = -1;
+      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('sel'));
+      var hue = parseInt(this.value) / 360;
+      currentActiveColor = hslToRgb(hue, 0.85, 0.45); 
+      updateColorUI(currentActiveColor);
+      triggerLiveUpdate();
+    });
+}
 
 document.getElementById('logo-style').addEventListener('change', function() {
     var val = this.value;
@@ -680,9 +702,9 @@ function loadLogo(src, name){
   img.crossOrigin = "Anonymous"; 
   img.onload = function(){
     logoImg = img;
-    document.getElementById('preview-thumb').src = src;
-    document.getElementById('logo-status').textContent = '✓ ' + name;
-    document.getElementById('logo-preview-wrap').style.display = 'flex';
+    if(document.getElementById('preview-thumb')) document.getElementById('preview-thumb').src = src;
+    if(document.getElementById('logo-status')) document.getElementById('logo-status').textContent = '✓ ' + name;
+    if(document.getElementById('logo-preview-wrap')) document.getElementById('logo-preview-wrap').style.display = 'flex';
     triggerLiveUpdate(); 
   };
   img.src = src;
@@ -705,7 +727,7 @@ document.getElementById('btn-clear').addEventListener('click', function(){
 });
 
 function renderPalette(){
-  var cont = document.getElementById('palette-swatches'); cont.innerHTML = '';
+  var cont = document.getElementById('palette-swatches'); if(!cont) return; cont.innerHTML = '';
   palette.forEach((c, i) => {
     var sw = document.createElement('div'); sw.className = 'swatch' + (i === selPalIdx ? ' sel' : '');
     sw.style.background = `rgb(${rr(c[0])},${rr(c[1])},${rr(c[2])})`;
@@ -721,6 +743,7 @@ function renderPalette(){
   });
 }
 
+// --- INTEGRAÇÃO DO DESIGN MÓDULO ORGÂNICO / LÍQUIDO ---
 function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
   var r = size / 2, cx = x + r, cy = y + r, d = size - (pad * 2);
   ctx.beginPath();
@@ -734,15 +757,13 @@ function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
   } else if (type === 'diamond') {
       ctx.moveTo(cx, y + pad); ctx.lineTo(x + size - pad, cy); ctx.lineTo(cx, y + size - pad); ctx.lineTo(x + pad, cy); ctx.closePath(); ctx.fill();
   } else if (type === 'organic') {
-      // Cria a base esférica
       ctx.arc(cx, cy, r - pad, 0, Math.PI * 2); ctx.fill();
-      // Conecta horizontalmente com os vizinhos, formando os blocos líquidos ("blobs")
       if (hasRight) { ctx.fillRect(cx, y + pad, size, d); }
-      // Conecta verticalmente
       if (hasBottom) { ctx.fillRect(x + pad, cy, d, size); }
   }
 }
 
+// --- INTEGRAÇÃO DOS FINDERS PREMIUM COM ANEL REDONDO E DIAMANTE ---
 function drawFinders(ctx, n, cell, col, offset, isForScan, canvasBgColor, styleType){
   var bgRgb = hexToRgb(canvasBgColor); var fcArray = ensureContrast(col.slice(), bgRgb);
   var fc = `rgb(${rr(fcArray[0])},${rr(fcArray[1])},${rr(fcArray[2])})`;
@@ -925,7 +946,7 @@ function drawAnimationFrame(ctx, w, h, time) {
 function animationLoop(timestamp) {
     if (!animStartTime) animStartTime = timestamp; var elapsedTime = (timestamp - animStartTime) % 10000; 
     var c = document.getElementById('qr-canvas');
-    if(c.width > 0) drawAnimationFrame(c.getContext('2d'), c.width, c.height, elapsedTime);
+    if(c && c.width > 0) drawAnimationFrame(c.getContext('2d'), c.width, c.height, elapsedTime);
     animRequest = requestAnimationFrame(animationLoop);
 }
 
@@ -949,13 +970,13 @@ async function runEngine() {
     var layersScan    = await generateQRLayers(url, sliderParam, baseCol, styleType, logoStyleMode, 4, true, 800); 
     layerForeground = layersPreview.foreground; layerDigitalMerged = layersPreview.merged;    
     
-    // COMO O MODO CENTRAL ESTÁ TRAVADO EM 24% (Limiar seguro real), NÓS IGNORAMOS O FALSO NEGATIVO DO jsQR NESSE MODO E VALIDAMOS APENAS O CONTRASTE DA COR!
+    // CORREÇÃO ANTI-FALSO NEGATIVO: Ignora o buraco no scannerjs e valida pelo contraste real
     var isBgDark = lum(baseCol) > 0.5; var safeColorContrast = contrast(baseCol, isBgDark ? [19,19,26] : [255,255,255]);
     var scanResult = simulateRealScan(layersScan.merged);
     var validationPassed = false;
 
     if (logoStyleMode === 'center') {
-        validationPassed = (safeColorContrast >= 2.5); // Ignora o buraco no jsQR e foca se a cor está vibrante contra o fundo
+        validationPassed = (safeColorContrast >= 2.5); 
     } else {
         validationPassed = (scanResult && scanResult.data === url);
     }
@@ -964,11 +985,11 @@ async function runEngine() {
         logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>O design está com contraste ideal e dados mapeados com segurança.</span></div></div>`;
         finalConf.innerHTML = '<strong style="color:var(--ok-border)">Operacional</strong>';
     } else {
-        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Câmera pode ter dificuldade. Aumente o contraste (escureça ou clareie a cor).</span></div></div>`;
+        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Câmera pode ter dificuldade. Aumente o contraste (troque a cor do QR).</span></div></div>`;
         finalConf.innerHTML = '<strong style="color:var(--fail-border)">Risco Detetado</strong>';
     }
     
-    var destCanvas = document.getElementById('qr-canvas'); destCanvas.width = 1200; destCanvas.height = 1200; 
+    var destCanvas = document.getElementById('qr-canvas'); if(destCanvas) { destCanvas.width = 1200; destCanvas.height = 1200; }
     drawAnimationFrame(destCanvas.getContext('2d'), 1200, 1200, 9999); animRequest = requestAnimationFrame(animationLoop);
   } catch (err) {
     logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Erro no Processamento</strong><span>${err.message || 'Falha ao renderizar. Verifique o link.'}</span></div></div>`;
@@ -1058,7 +1079,7 @@ var pixLogo = new Image();
 pixLogo.src = 'LogoQRforma.png'; 
 
 async function animatePixQR(pixText) {
-    var canvas = document.getElementById('canvas-qr-pix');
+    var canvas = document.getElementById('canvas-qr-pix'); if(!canvas) return;
     var ctx = canvas.getContext('2d');
     canvas.width = 800; canvas.height = 800;
     
