@@ -283,7 +283,7 @@
   
   <div class="result-meta">
     <span>Status do Scanner: <strong id="final-conf">—</strong></span>
-    <span style="font-size:0.65rem; padding:2px 6px; background:var(--info-bg); color:var(--info-text); border-radius:4px;">MOTION ATIVO (10s | 60FPS)</span>
+    <span style="font-size:0.65rem; padding:2px 6px; background:var(--info-bg); color:var(--info-text); border-radius:4px;">MOTION ATIVO (15s | 60FPS)</span>
   </div>
   
   <div class="qr-container">
@@ -629,6 +629,7 @@ var layerDigitalMerged = null;
 var liveUpdateTimer = null; 
 var qrMetaCache = null;
 var particleCache = null;
+var TOTAL_ANIMATION_DURATION = 15000; // duração do loop principal do motion (ms) — era 10000
 
 function updateColorUI(rgbArray) {
     var hex = rgbToHex(rgbArray[0], rgbArray[1], rgbArray[2]).toUpperCase();
@@ -1170,7 +1171,7 @@ function drawAnimationFrame(ctx, w, h, time) {
 }
 
 function animationLoop(timestamp) {
-    if (!animStartTime) animStartTime = timestamp; var elapsedTime = (timestamp - animStartTime) % 10000; 
+    if (!animStartTime) animStartTime = timestamp; var elapsedTime = (timestamp - animStartTime) % TOTAL_ANIMATION_DURATION; 
     var c = document.getElementById('qr-canvas');
     if(c && c.width > 0) drawAnimationFrame(c.getContext('2d'), c.width, c.height, elapsedTime);
     animRequest = requestAnimationFrame(animationLoop);
@@ -1348,7 +1349,7 @@ async function recordCanvasAnimation(vCanvas, mimeType) {
 
   recorder.start();
   var vCtx = vCanvas.getContext('2d');
-  var totalDur = 10000, fps = 60, frameTime = 1000 / fps;
+  var totalDur = TOTAL_ANIMATION_DURATION, fps = 60, frameTime = 1000 / fps;
   for (let t = 0; t <= totalDur; t += frameTime) {
     drawAnimationFrame(vCtx, vCanvas.width, vCanvas.height, t);
     await new Promise(function(r) { setTimeout(r, frameTime); });
@@ -1396,7 +1397,7 @@ document.getElementById('btn-dl-video').addEventListener('click', async function
       });
     }
 
-    downloadBlob(finalBlob, 'QRforma-Motion-10s-60fps.mp4');
+    downloadBlob(finalBlob, 'QRforma-Motion-15s-60fps.mp4');
   } catch (err) {
     alert('Erro ao gerar o vídeo MP4: ' + (err && err.message ? err.message : 'falha desconhecida') + '. Tente novamente.');
   } finally {
