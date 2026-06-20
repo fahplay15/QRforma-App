@@ -246,6 +246,7 @@
     <option value="square">■ Quadrados Modernos</option>
     <option value="fluid">💧 Gotas Fluidas</option>
     <option value="diamond">✦ Diamantes Geométricos</option>
+    <option value="hexagon">⬡ Hexagonal (Tech)</option>
   </select>
 
   <div class="color-picking-zone" id="tut-target-colors">
@@ -270,6 +271,11 @@
     <input type="range" id="sl-logo" min="15" max="24" value="22"/>
     <span class="slider-val" id="sl-logo-v">22%</span>
   </div>
+
+  <label class="check-row" for="chk-light-sweep" style="display:flex; align-items:center; gap:9px; background:var(--bg); border:1px solid var(--border); border-radius:9px; padding:11px 13px; margin-bottom:20px; cursor:pointer; transition:border-color .2s;">
+    <input type="checkbox" id="chk-light-sweep" style="width:17px; height:17px; accent-color:var(--accent2); cursor:pointer; flex-shrink:0;"/>
+    <span style="font-size:.86rem;">💫 Efeito Revelação por Luz <span style="color:var(--muted); font-size:.76rem;">(varredura de brilho sobre o QR)</span></span>
+  </label>
 
   <hr class="divider"/>
   
@@ -770,6 +776,23 @@ function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
       ctx.arc(cx, cy, r - pad, 0, Math.PI * 2); ctx.fill();
       if (hasRight) { ctx.fillRect(cx, y + pad, size, d); }
       if (hasBottom) { ctx.fillRect(x + pad, cy, d, size); }
+  } else if (type === 'hexagon') {
+      var hr = r - pad; var rounding = hr * 0.18; // raio de arredondamento dos vértices
+      var verts = [];
+      for (var hi = 0; hi < 6; hi++) {
+          // hexágono "flat-top": começa em -90° (topo) e gira a cada 60°
+          var ang = (Math.PI / 180) * (60 * hi - 90);
+          verts.push([cx + hr * Math.cos(ang), cy + hr * Math.sin(ang)]);
+      }
+      for (var hi = 0; hi < 6; hi++) {
+          var p0 = verts[hi], p1 = verts[(hi + 1) % 6];
+          if (hi === 0) {
+              var midX = (verts[5][0] + p0[0]) / 2, midY = (verts[5][1] + p0[1]) / 2;
+              ctx.moveTo(midX, midY);
+          }
+          ctx.arcTo(p0[0], p0[1], p1[0], p1[1], rounding);
+      }
+      ctx.closePath(); ctx.fill();
   }
 }
 
@@ -996,6 +1019,52 @@ function drawDustFrame(ctx, w, h, time, baseCol, originX, originY, spanW, spanH,
     ctx.globalAlpha = 1;
 }
 
+// --- EFEITO "REVELAÇÃO POR LUZ": reflexo de brilho diagonal que varre o QR já formado ---
+// Funciona como um "glare" de luz passando por cima da composição final — não substitui
+// nem reordena nada do que já foi desenhado, só soma um brilho sutil sincronizado com os módulos.
+function drawLightSweep(ctx, w, h, time, foregroundCanvas) {
+    if (!foregroundCanvas) return;
+
+    if (!lightSweepMaskCanvas || lightSweepMaskCanvas.width !== w || lightSweepMaskCanvas.height !== h) {
+        lightSweepMaskCanvas = document.createElement('canvas');
+        lightSweepMaskCanvas.width = w; lightSweepMaskCanvas.height = h;
+    }
+    var mCtx = lightSweepMaskCanvas.getContext('2d');
+    mCtx.clearRect(0, 0, w, h);
+
+    var cycle = (time % 3200) / 3200; // ciclo de varredura de 3.2s
+    var diag = Math.sqrt(w * w + h * h);
+    var bandWidth = diag * 0.16;
+    var travel = diag + bandWidth * 2;
+    var bandCenter = -bandWidth + cycle * travel;
+
+    mCtx.save();
+    mCtx.translate(w / 2, h / 2);
+    mCtx.rotate(Math.PI / 4);
+    mCtx.translate(-diag / 2, -diag / 2);
+
+    var grad = mCtx.createLinearGradient(bandCenter - bandWidth, 0, bandCenter + bandWidth, 0);
+    grad.addColorStop(0, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,0.85)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    mCtx.fillStyle = grad;
+    mCtx.fillRect(0, -diag, diag, diag * 3);
+    mCtx.restore();
+
+    // recorta o brilho apenas onde já existem módulos escuros (não vaza pro fundo branco/escuro)
+    mCtx.globalCompositeOperation = 'source-in';
+    mCtx.drawImage(foregroundCanvas, 0, 0, w, h);
+    mCtx.globalCompositeOperation = 'source-over';
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter'; // soma luz, nunca escurece nem duplica opacamente
+    ctx.drawImage(lightSweepMaskCanvas, 0, 0);
+    ctx.restore();
+}
+
+var lightSweepMaskCanvas = null;
+
+
 function drawAnimationFrame(ctx, w, h, time) {
     var cx = w / 2, cy = h / 2; 
 
@@ -1082,6 +1151,14 @@ function drawAnimationFrame(ctx, w, h, time) {
             ctx.drawImage(layerForeground, 0, 0, w, h);
         }
     }
+
+    // Efeito opcional "Revelação por Luz" — combinável com qualquer modo de logo acima.
+    // Só ativa depois que o QR já está com sua composição final (após 2200ms, mesmo corte de fase
+    // usado pelos outros modos), pra não competir visualmente com a animação de entrada do logo.
+    var lightSweepEl = document.getElementById('chk-light-sweep');
+    if (lightSweepEl && lightSweepEl.checked && time > 2200 && layerForeground) {
+        drawLightSweep(ctx, w, h, time, layerForeground);
+    }
 }
 
 function animationLoop(timestamp) {
@@ -1152,6 +1229,7 @@ function triggerLiveUpdate() { clearTimeout(liveUpdateTimer); liveUpdateTimer = 
 
 document.getElementById('qr-url').addEventListener('input', triggerLiveUpdate);
 document.getElementById('qr-style').addEventListener('change', triggerLiveUpdate);
+document.getElementById('chk-light-sweep').addEventListener('change', triggerLiveUpdate);
 
 document.getElementById('btn-png-digital').onclick = function(){
   if (isPremiumUser) {
