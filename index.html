@@ -235,7 +235,7 @@
   <select id="logo-style" class="custom-select">
     <option value="center">🎯 Emblema Central (Encolhe p/ o Meio)</option>
     <option value="background">👻 Marca d'água (Misturada ao Fundo)</option>
-    <option value="particles">✨ Dispersão Magnética (Logo vira o QR)</option>
+    <option value="particles">✨ Poeira Mágica (Partículas ao Redor da Logo)</option>
   </select>
 
   <label class="fl">Estilo dos Pontinhos (Módulos)</label>
@@ -894,10 +894,15 @@ function simulateRealScan(sourceCanvas) {
     return jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
 }
 
-// --- SISTEMA DE PARTÍCULAS: LOGO → MÓDULOS DO QR (efeito "Dispersão Magnética") ---
+// --- SISTEMA DE POEIRA MÁGICA: PARTÍCULAS LIVRES AO REDOR DO LOGO ---
+// Diferente da v1 (partículas viravam módulos do QR), aqui as partículas são
+// puramente decorativas e nunca tocam a malha de dados do QR — fluem livres
+// atrás/ao redor do logo com física orgânica (sem destino fixo), o que permite
+// movimento contínuo e suave em loop, sem a trava de "pousar" em um ponto exato.
+
 function sampleLogoParticles(img, count) {
     var sCanvas = document.createElement('canvas');
-    var sSize = 64; // resolução de amostragem do logo
+    var sSize = 56; // resolução de amostragem do logo
     sCanvas.width = sSize; sCanvas.height = sSize;
     var sCtx = sCanvas.getContext('2d');
     sCtx.clearRect(0, 0, sSize, sSize);
@@ -914,7 +919,8 @@ function sampleLogoParticles(img, count) {
             var idx = (py * sSize + px) * 4;
             var alpha = data[idx + 3];
             if (alpha > 80) {
-                candidates.push({ nx: px / sSize, ny: py / sSize, r: data[idx], g: data[idx+1], b: data[idx+2] });
+                // posição normalizada centrada em (0,0), de -0.5 a 0.5
+                candidates.push({ nx: (px / sSize) - 0.5, ny: (py / sSize) - 0.5, r: data[idx], g: data[idx+1], b: data[idx+2] });
             }
         }
     }
@@ -925,99 +931,74 @@ function sampleLogoParticles(img, count) {
     return candidates.length ? candidates.slice(0, count) : [];
 }
 
-function getQRDarkModulePositions(oQR, mc) {
-    var positions = [];
-    for (var row = 0; row < mc; row++) {
-        for (var col = 0; col < mc; col++) {
-            if (!oQR.isDark(row, col)) continue;
-            var isFinder = (row < 7 && col < 7) || (row < 7 && col >= mc-7) || (row >= mc-7 && col < 7);
-            if (isFinder) continue;
-            positions.push({ row: row, col: col });
-        }
-    }
-    return positions;
-}
-
-function buildParticleSystem(logoImg, oQR, mc, density) {
-    if (!logoImg || !oQR) return null;
-    var darkModules = getQRDarkModulePositions(oQR, mc);
-    if (!darkModules.length) return null;
-
-    var targetCount = Math.max(20, Math.floor(darkModules.length * (density / 100)));
-    targetCount = Math.min(targetCount, darkModules.length, 600); // teto de performance
-
-    var shuffledModules = darkModules.slice();
-    for (var i = shuffledModules.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = shuffledModules[i]; shuffledModules[i] = shuffledModules[j]; shuffledModules[j] = tmp;
-    }
-
-    var logoParticles = sampleLogoParticles(logoImg, targetCount);
-    if (!logoParticles.length) return null;
+function buildDustParticles(logoImg, density) {
+    if (!logoImg) return null;
+    var count = Math.max(15, Math.floor(60 + (density / 100) * 140)); // 15-200 partículas
+    var samples = sampleLogoParticles(logoImg, count);
+    if (!samples.length) return null;
 
     var particles = [];
-    for (var k = 0; k < targetCount; k++) {
-        var src = logoParticles[k % logoParticles.length];
-        var dst = shuffledModules[k];
-        var burstAngle = Math.random() * Math.PI * 2;
-        var burstDist = 0.15 + Math.random() * 0.25;
+    samples.forEach(function(src) {
+        // raio orbital em torno da posição original no logo (efeito "desprendendo")
+        var orbitRadius = 0.04 + Math.random() * 0.10;
+        var orbitSpeed = (0.4 + Math.random() * 0.8) * (Math.random() < 0.5 ? 1 : -1); // direção aleatória
+        var driftAngle = Math.random() * Math.PI * 2;
+        var driftDist = 0.06 + Math.random() * 0.22; // o quanto se afasta do logo ao longo do loop
+        var bobSpeed = 0.6 + Math.random() * 1.2;
+        var bobPhase = Math.random() * Math.PI * 2;
         particles.push({
-            startNX: src.nx, startNY: src.ny,
-            burstNX: src.nx + Math.cos(burstAngle) * burstDist,
-            burstNY: src.ny + Math.sin(burstAngle) * burstDist,
-            row: dst.row, col: dst.col,
+            baseNX: src.nx, baseNY: src.ny,
             color: [src.r, src.g, src.b],
-            sizeJitter: 0.7 + Math.random() * 0.6,
-            delay: Math.random() * 200
+            orbitRadius: orbitRadius, orbitSpeed: orbitSpeed, orbitPhase: Math.random() * Math.PI * 2,
+            driftAngle: driftAngle, driftDist: driftDist,
+            bobSpeed: bobSpeed, bobPhase: bobPhase,
+            sizeJitter: 0.55 + Math.random() * 0.85,
+            fadeOffset: Math.random()
         });
-    }
+    });
     return particles;
 }
 
-function drawParticlesFrame(ctx, w, h, time, baseCol, meta) {
-    if (!particleCache || !meta) return;
-    var cell = meta.cell, quietZone = meta.quietZone, totalSize = meta.totalSize;
-    var scaleToCanvas = w / totalSize; // partículas foram calculadas em coordenadas do core (coreSize/cell originais)
+function drawDustFrame(ctx, w, h, time, baseCol, originX, originY, spanW, spanH, globalAlpha) {
+    if (!particleCache) return;
+    var t = time / 1000; // segundos
 
     particleCache.forEach(function(p) {
-        if (time <= 1500) return; // ainda na fase "logo inteiro" (desenhada fora desta função)
-        var localTime = Math.max(0, time - 1500 - p.delay);
-        var px, py, scale = 1;
+        // ciclo de "respiração": as partículas se afastam e voltam suavemente em loop contínuo (sem easing abrupto)
+        var driftCycle = (Math.sin(t * 0.5 + p.fadeOffset * Math.PI * 2) + 1) / 2; // 0→1→0 suave
+        var driftX = Math.cos(p.driftAngle) * p.driftDist * driftCycle;
+        var driftY = Math.sin(p.driftAngle) * p.driftDist * driftCycle;
 
-        if (localTime <= 500) {
-            var t1 = easeOutCubic(Math.min(localTime / 500, 1));
-            px = p.startNX + (p.burstNX - p.startNX) * t1;
-            py = p.startNY + (p.burstNY - p.startNY) * t1;
-            scale = 1 - t1 * 0.3;
-        } else if (localTime <= 1700) {
-            var t2 = easeInOutCubic(Math.min((localTime - 500) / 1200, 1));
-            var targetNX = (p.col * cell + quietZone) / totalSize;
-            var targetNY = (p.row * cell + quietZone) / totalSize;
-            px = p.burstNX + (targetNX - p.burstNX) * t2;
-            py = p.burstNY + (targetNY - p.burstNY) * t2;
-            scale = 0.7 + t2 * 0.3;
-        } else {
-            px = (p.col * cell + quietZone) / totalSize;
-            py = (p.row * cell + quietZone) / totalSize;
-            scale = 1;
-        }
+        // pequena órbita contínua ao redor da posição base (movimento fluido, sem paradas)
+        var orbitX = Math.cos(t * p.orbitSpeed + p.orbitPhase) * p.orbitRadius;
+        var orbitY = Math.sin(t * p.orbitSpeed + p.orbitPhase) * p.orbitRadius;
 
-        var blendT = Math.min(Math.max((localTime - 1200) / 500, 0), 1);
-        var r = p.color[0] + (baseCol[0] - p.color[0]) * blendT;
-        var g = p.color[1] + (baseCol[1] - p.color[1]) * blendT;
-        var b = p.color[2] + (baseCol[2] - p.color[2]) * blendT;
+        // leve flutuação vertical extra (efeito poeira no ar)
+        var bobY = Math.sin(t * p.bobSpeed + p.bobPhase) * 0.015;
 
-        var sizePx = cell * scaleToCanvas * p.sizeJitter * scale;
+        var nx = p.baseNX + driftX + orbitX;
+        var ny = p.baseNY + driftY + orbitY + bobY;
 
-        ctx.fillStyle = `rgb(${rr(r)},${rr(g)},${rr(b)})`;
+        var px = originX + nx * spanW;
+        var py = originY + ny * spanH;
+
+        // opacidade pulsa levemente e some um pouco quando mais afastada (profundidade)
+        var alpha = (0.35 + 0.55 * (1 - driftCycle * 0.6)) * globalAlpha;
+        var scale = 1 - driftCycle * 0.25;
+        var sizePx = (spanW * 0.018) * p.sizeJitter * scale;
+
+        ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+        ctx.fillStyle = `rgb(${rr(p.color[0])},${rr(p.color[1])},${rr(p.color[2])})`;
         ctx.beginPath();
-        ctx.arc(px * w, py * h, sizePx / 2, 0, Math.PI * 2);
+        ctx.arc(px, py, Math.max(0.5, sizePx / 2), 0, Math.PI * 2);
         ctx.fill();
     });
+    ctx.globalAlpha = 1;
 }
 
 function drawAnimationFrame(ctx, w, h, time) {
     var cx = w / 2, cy = h / 2; 
+
 
     var padSafety = Math.ceil((w / 2048) * 100); 
     var logoW_Large = w - padSafety * 4; 
@@ -1058,19 +1039,30 @@ function drawAnimationFrame(ctx, w, h, time) {
             }
         }
     } else if (logoStyleMode === 'particles') {
-        if (time <= 1500) {
-            // mesma entrada do logo que os outros efeitos, pra manter consistência visual
-            let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy);
-            let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale);
-            drawLogoContained(ctx, logoImg, -logoW_Large/2, -logoW_Large/2, logoW_Large, logoW_Large);
-        } else {
-            ctx.globalAlpha = 1.0; ctx.filter = 'none';
-            // base do QR (finders + módulos não-partícula) sempre desenhada e sempre legível
-            ctx.drawImage(layerForeground, 0, 0, w, h);
-            // partículas por cima, assentando nos módulos restantes
-            if (qrMetaCache) {
-                drawParticlesFrame(ctx, w, h, time, currentActiveColor, qrMetaCache);
-            }
+        // QR sempre desenhado por completo e legível desde o frame 0 — nada o esconde.
+        ctx.globalAlpha = 1.0; ctx.filter = 'none';
+        ctx.drawImage(layerForeground, 0, 0, w, h);
+
+        // Logo como pequeno selo central fixo (mesmo princípio de segurança do modo "center")
+        var logoW_Dust = w * 0.20;
+        var padDust = w * 0.02;
+
+        // Poeira mágica: nuvem de partículas soltas flutuando ao redor do selo, atrás dele,
+        // num raio maior que o próprio logo — puramente decorativa, nunca sobre os módulos de dado.
+        if (particleCache) {
+            var dustSpan = w * 0.62; // área de flutuação das partículas, centrada no selo
+            drawDustFrame(ctx, w, h, time, currentActiveColor, cx, cy, dustSpan, dustSpan, 1.0);
+        }
+
+        if (logoImg) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.fillStyle = canvasBgColor;
+            ctx.beginPath();
+            ctx.roundRect(-logoW_Dust/2 - padDust, -logoW_Dust/2 - padDust, logoW_Dust + (padDust*2), logoW_Dust + (padDust*2), w * 0.03);
+            ctx.fill();
+            drawLogoContained(ctx, logoImg, -logoW_Dust/2, -logoW_Dust/2, logoW_Dust, logoW_Dust);
+            ctx.restore();
         }
     } else {
         if (time <= 1500) { 
@@ -1120,9 +1112,9 @@ async function runEngine() {
     layerForeground = layersPreview.foreground; layerDigitalMerged = layersPreview.merged;    
     qrMetaCache = layersPreview.meta;
 
-    if (logoStyleMode === 'particles' && logoImg && qrMetaCache) {
+    if (logoStyleMode === 'particles' && logoImg) {
         var density = sliderParam * 100; // sl-logo vai de 30 a 100 nesse modo, já representa %
-        particleCache = buildParticleSystem(logoImg, qrMetaCache.oQR, qrMetaCache.mc, density);
+        particleCache = buildDustParticles(logoImg, density);
     } else {
         particleCache = null;
     }
