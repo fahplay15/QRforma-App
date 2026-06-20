@@ -1020,8 +1020,9 @@ function drawDustFrame(ctx, w, h, time, baseCol, originX, originY, spanW, spanH,
 }
 
 // --- EFEITO "REVELAÇÃO POR LUZ": reflexo de brilho diagonal que varre o QR já formado ---
-// Funciona como um "glare" de luz passando por cima da composição final — não substitui
-// nem reordena nada do que já foi desenhado, só soma um brilho sutil sincronizado com os módulos.
+// Clareia os módulos dentro da faixa (proporcional à cor real, então funciona em qualquer cor
+// escolhida, inclusive tons claros) e adiciona um halo de glow real via shadowBlur — visível
+// de forma consistente, ao contrário de simplesmente somar branco (que se perde em cores claras).
 function drawLightSweep(ctx, w, h, time, foregroundCanvas) {
     if (!foregroundCanvas) return;
 
@@ -1034,30 +1035,33 @@ function drawLightSweep(ctx, w, h, time, foregroundCanvas) {
 
     var cycle = (time % 3200) / 3200; // ciclo de varredura de 3.2s
     var diag = Math.sqrt(w * w + h * h);
-    var bandWidth = diag * 0.16;
+    var bandWidth = diag * 0.18;
     var travel = diag + bandWidth * 2;
     var bandCenter = -bandWidth + cycle * travel;
 
+    // 1) Desenha na máscara uma faixa OPACA branca (não soma — substitui de verdade),
+    //    recortada na forma exata dos módulos. Isso clareia visivelmente mesmo módulos já claros.
     mCtx.save();
     mCtx.translate(w / 2, h / 2);
     mCtx.rotate(Math.PI / 4);
     mCtx.translate(-diag / 2, -diag / 2);
-
     var grad = mCtx.createLinearGradient(bandCenter - bandWidth, 0, bandCenter + bandWidth, 0);
     grad.addColorStop(0, 'rgba(255,255,255,0)');
-    grad.addColorStop(0.5, 'rgba(255,255,255,0.85)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,1)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     mCtx.fillStyle = grad;
     mCtx.fillRect(0, -diag, diag, diag * 3);
     mCtx.restore();
 
-    // recorta o brilho apenas onde já existem módulos escuros (não vaza pro fundo branco/escuro)
-    mCtx.globalCompositeOperation = 'source-in';
+    mCtx.globalCompositeOperation = 'destination-in'; // mantém só onde há módulo (a faixa vira a "opacidade" do módulo ali)
     mCtx.drawImage(foregroundCanvas, 0, 0, w, h);
     mCtx.globalCompositeOperation = 'source-over';
 
+    // 2) Desenha o resultado com alpha alto (clareamento real, perceptível em qualquer cor de módulo) + glow
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter'; // soma luz, nunca escurece nem duplica opacamente
+    ctx.globalAlpha = 0.9;
+    ctx.shadowColor = 'rgba(255,255,255,0.9)';
+    ctx.shadowBlur = Math.max(8, bandWidth * 0.10);
     ctx.drawImage(lightSweepMaskCanvas, 0, 0);
     ctx.restore();
 }
