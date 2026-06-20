@@ -1198,32 +1198,129 @@ document.getElementById('btn-png-print').onclick = async function(){
   btn.innerText = oldTxt;
 };
 
+// Detecta o melhor mimeType de MP4 nativo suportado pelo navegador (Safari/Android costumam suportar; Chrome desktop geralmente não)
+function getBestNativeMp4MimeType() {
+  var candidates = [
+    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+    'video/mp4;codecs=h264,aac',
+    'video/mp4'
+  ];
+  for (var i = 0; i < candidates.length; i++) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(candidates[i])) {
+      return candidates[i];
+    }
+  }
+  return null;
+}
+
+var ffmpegInstance = null;
+async function getFFmpeg(onLog) {
+  if (ffmpegInstance) return ffmpegInstance;
+  var { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js');
+  var { toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
+  var ffmpeg = new FFmpeg();
+  if (onLog) ffmpeg.on('log', function(ev) { onLog(ev.message); });
+  var coreBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+  await ffmpeg.load({
+    coreURL: await toBlobURL(coreBase + '/ffmpeg-core.js', 'text/javascript'),
+    wasmURL: await toBlobURL(coreBase + '/ffmpeg-core.wasm', 'application/wasm')
+  });
+  ffmpegInstance = ffmpeg;
+  return ffmpeg;
+}
+
+async function convertWebmToMp4(webmBlob, onProgress) {
+  var { fetchFile } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
+  var ffmpeg = await getFFmpeg();
+  if (onProgress) {
+    ffmpeg.on('progress', function(ev) { onProgress(Math.min(99, Math.round((ev.progress || 0) * 100))); });
+  }
+  await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
+  // -crf 18 = qualidade alta visualmente sem perdas perceptíveis; -preset fast = bom equilíbrio velocidade/tamanho no wasm
+  await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', 'output.mp4']);
+  var data = await ffmpeg.readFile('output.mp4');
+  await ffmpeg.deleteFile('input.webm');
+  await ffmpeg.deleteFile('output.mp4');
+  return new Blob([data.buffer], { type: 'video/mp4' });
+}
+
+function downloadBlob(blob, filename) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+
+async function recordCanvasAnimation(vCanvas, mimeType) {
+  var stream = vCanvas.captureStream(60);
+  var recorder = new MediaRecorder(stream, { mimeType: mimeType });
+  var chunks = [];
+  recorder.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
+
+  var stopPromise = new Promise(function(resolve) {
+    recorder.onstop = function() { resolve(new Blob(chunks, { type: mimeType })); };
+  });
+
+  recorder.start();
+  var vCtx = vCanvas.getContext('2d');
+  var totalDur = 10000, fps = 60, frameTime = 1000 / fps;
+  for (let t = 0; t <= totalDur; t += frameTime) {
+    drawAnimationFrame(vCtx, vCanvas.width, vCanvas.height, t);
+    await new Promise(function(r) { setTimeout(r, frameTime); });
+  }
+  recorder.stop();
+  return stopPromise;
+}
+
 document.getElementById('btn-dl-video').addEventListener('click', async function(){
   if (!isPremiumUser) { triggerPaywallFlow(); return; }
 
-  document.getElementById('loader-video').style.display = 'flex';
-  var vCanvas = document.createElement('canvas'); vCanvas.width = 1080; vCanvas.height = 1080; var vCtx = vCanvas.getContext('2d');
-  
+  var loaderBox = document.getElementById('loader-video');
+  var loaderMsg = document.getElementById('loader-msg');
+  loaderBox.style.display = 'flex';
+  loaderMsg.textContent = 'Renderizando Vídeo HD...';
+
+  var vCanvas = document.createElement('canvas'); vCanvas.width = 1080; vCanvas.height = 1080;
+
   var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
   var logoStyleMode = document.getElementById('logo-style').value;
   var tempHighRes = await generateQRLayers(document.getElementById('qr-url').value, sliderParam, currentActiveColor, document.getElementById('qr-style').value, logoStyleMode, 4, false, 1080);
-  
+
   var oldForeground = layerForeground; layerForeground = tempHighRes.foreground;
-  
-  var stream = vCanvas.captureStream(60); var recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }); var chunks = [];
-  recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
-  recorder.onstop = () => {
-      var blob = new Blob(chunks, { type: 'video/webm' }); var url = URL.createObjectURL(blob);
-      var a = document.createElement('a'); a.href = url; a.download = 'QRforma-Motion-10s-60fps.webm'; a.click();
-      document.getElementById('loader-video').style.display = 'none'; layerForeground = oldForeground; 
-  };
-  
-  recorder.start(); var totalDur = 10000; var fps = 60; var frameTime = 1000 / fps;
-  for(let t = 0; t <= totalDur; t += frameTime) {
-      drawAnimationFrame(vCtx, vCanvas.width, vCanvas.height, t); await new Promise(r => setTimeout(r, frameTime)); 
+
+  try {
+    var nativeMp4Type = getBestNativeMp4MimeType();
+    var finalBlob = null;
+
+    if (nativeMp4Type) {
+      // Caminho rápido: o próprio navegador grava MP4 direto, sem conversão extra.
+      var mp4Blob = await recordCanvasAnimation(vCanvas, nativeMp4Type);
+      // Alguns navegadores reportam suporte a MP4 mas geram arquivo vazio/corrompido na prática.
+      // Um vídeo 1080x1080 60fps de 10s nunca deve sair com menos de ~50KB; se sair, tratamos como falha e caímos no fallback.
+      if (mp4Blob && mp4Blob.size > 50000) {
+        finalBlob = mp4Blob;
+      }
+    }
+
+    if (!finalBlob) {
+      // Fallback: grava webm (sempre suportado) e converte pra MP4 com FFmpeg.wasm no próprio navegador.
+      var webmBlob = await recordCanvasAnimation(vCanvas, 'video/webm');
+      loaderMsg.textContent = 'Convertendo para MP4... 0%';
+      finalBlob = await convertWebmToMp4(webmBlob, function(pct) {
+        loaderMsg.textContent = 'Convertendo para MP4... ' + pct + '%';
+      });
+    }
+
+    downloadBlob(finalBlob, 'QRforma-Motion-10s-60fps.mp4');
+  } catch (err) {
+    alert('Erro ao gerar o vídeo MP4: ' + (err && err.message ? err.message : 'falha desconhecida') + '. Tente novamente.');
+  } finally {
+    loaderBox.style.display = 'none';
+    loaderMsg.textContent = 'Renderizando Vídeo HD...';
+    layerForeground = oldForeground;
   }
-  recorder.stop();
 });
+
+
 
 var pixAnimReq = null;
 var pixLogo = new Image();
