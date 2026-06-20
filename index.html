@@ -1021,10 +1021,13 @@ function drawDustFrame(ctx, w, h, time, baseCol, originX, originY, spanW, spanH,
 
 // --- EFEITO "REVELAÇÃO POR LUZ": reflexo de brilho diagonal que varre o QR já formado ---
 // Clareia os módulos dentro da faixa (proporcional à cor real, então funciona em qualquer cor
-// escolhida, inclusive tons claros) e adiciona um halo de glow real via shadowBlur — visível
-// de forma consistente, ao contrário de simplesmente somar branco (que se perde em cores claras).
-function drawLightSweep(ctx, w, h, time, foregroundCanvas) {
+// escolhida, inclusive tons claros). Intensidade e blur calibrados para não comprometer o
+// contraste necessário à leitura do QR — o brilho é visível mas sutil, nunca "estoura" o módulo
+// a ponto de se misturar com o módulo vizinho ou com o fundo.
+function drawLightSweep(ctx, w, h, time, foregroundCanvas, sweepStrength) {
     if (!foregroundCanvas) return;
+    if (sweepStrength === undefined) sweepStrength = 1;
+    if (sweepStrength <= 0) return;
 
     if (!lightSweepMaskCanvas || lightSweepMaskCanvas.width !== w || lightSweepMaskCanvas.height !== h) {
         lightSweepMaskCanvas = document.createElement('canvas');
@@ -1033,14 +1036,14 @@ function drawLightSweep(ctx, w, h, time, foregroundCanvas) {
     var mCtx = lightSweepMaskCanvas.getContext('2d');
     mCtx.clearRect(0, 0, w, h);
 
-    var cycle = (time % 3200) / 3200; // ciclo de varredura de 3.2s
+    var cycleDuration = 5500; // varredura mais lenta e calma (era 3200ms)
+    var cycle = (time % cycleDuration) / cycleDuration;
     var diag = Math.sqrt(w * w + h * h);
-    var bandWidth = diag * 0.18;
+    var bandWidth = diag * 0.11; // faixa mais estreita (era 0.18) — menos área do QR afetada por vez
     var travel = diag + bandWidth * 2;
     var bandCenter = -bandWidth + cycle * travel;
 
-    // 1) Desenha na máscara uma faixa OPACA branca (não soma — substitui de verdade),
-    //    recortada na forma exata dos módulos. Isso clareia visivelmente mesmo módulos já claros.
+    // 1) Desenha na máscara uma faixa branca (substitui, não soma), recortada na forma dos módulos.
     mCtx.save();
     mCtx.translate(w / 2, h / 2);
     mCtx.rotate(Math.PI / 4);
@@ -1053,15 +1056,15 @@ function drawLightSweep(ctx, w, h, time, foregroundCanvas) {
     mCtx.fillRect(0, -diag, diag, diag * 3);
     mCtx.restore();
 
-    mCtx.globalCompositeOperation = 'destination-in'; // mantém só onde há módulo (a faixa vira a "opacidade" do módulo ali)
+    mCtx.globalCompositeOperation = 'destination-in'; // mantém só onde há módulo
     mCtx.drawImage(foregroundCanvas, 0, 0, w, h);
     mCtx.globalCompositeOperation = 'source-over';
 
-    // 2) Desenha o resultado com alpha alto (clareamento real, perceptível em qualquer cor de módulo) + glow
+    // 2) Desenha o resultado com intensidade moderada (era 0.9) e SEM blur/shadow — o blur antigo
+    //    espalhava luz para os pixels vizinhos do módulo, reduzindo o contraste nas bordas e
+    //    atrapalhando leitores de QR reais. sweepStrength permite fade-in suave na entrada do efeito.
     ctx.save();
-    ctx.globalAlpha = 0.9;
-    ctx.shadowColor = 'rgba(255,255,255,0.9)';
-    ctx.shadowBlur = Math.max(8, bandWidth * 0.10);
+    ctx.globalAlpha = 0.5 * sweepStrength;
     ctx.drawImage(lightSweepMaskCanvas, 0, 0);
     ctx.restore();
 }
@@ -1157,11 +1160,12 @@ function drawAnimationFrame(ctx, w, h, time) {
     }
 
     // Efeito opcional "Revelação por Luz" — combinável com qualquer modo de logo acima.
-    // Só ativa depois que o QR já está com sua composição final (após 2200ms, mesmo corte de fase
-    // usado pelos outros modos), pra não competir visualmente com a animação de entrada do logo.
+    // Em vez de ligar de uma vez em 2200ms (o que parecia um corte abrupto, sem fluidez),
+    // a intensidade sobe suavemente ao longo de 800ms — easeOutCubic, igual às outras transições do app.
     var lightSweepEl = document.getElementById('chk-light-sweep');
     if (lightSweepEl && lightSweepEl.checked && time > 2200 && layerForeground) {
-        drawLightSweep(ctx, w, h, time, layerForeground);
+        var sweepFadeIn = easeOutCubic(Math.min((time - 2200) / 800, 1));
+        drawLightSweep(ctx, w, h, time, layerForeground, sweepFadeIn);
     }
 }
 
