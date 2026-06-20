@@ -1041,20 +1041,27 @@ function drawLightSweep(ctx, w, h, time, foregroundCanvas, sweepStrength) {
     var cycle = (time % cycleDuration) / cycleDuration;
     var diag = Math.sqrt(w * w + h * h);
     var bandWidth = diag * 0.11; // faixa mais estreita (era 0.18) — menos área do QR afetada por vez
-    var travel = diag + bandWidth * 2;
-    var bandCenter = -bandWidth + cycle * travel;
 
-    // 1) Desenha na máscara uma faixa branca (substitui, não soma), recortada na forma dos módulos.
+    // Direção da varredura: diagonal de (0,0) [canto superior-esquerdo] até (w,h) [canto inferior-direito].
+    // Calculamos a faixa como uma banda perpendicular a essa diagonal, deslizando ao longo dela —
+    // sem usar ctx.rotate(), o que garante que cycle=0 cai exatamente no canto (0,0) e cycle=1 no canto (w,h),
+    // em vez de depender de como a rotação em torno do centro reposiciona a origem (o que fazia o efeito
+    // parecer "nascer no meio" do QR a cada reinício do ciclo).
+    var dirX = w / diag, dirY = h / diag; // vetor unitário da diagonal
+    var travel = diag + bandWidth * 2;
+    var bandPos = -bandWidth + cycle * travel; // posição da faixa ao longo da diagonal, com folga nas pontas
+
     mCtx.save();
-    mCtx.translate(w / 2, h / 2);
-    mCtx.rotate(Math.PI / 4);
-    mCtx.translate(-diag / 2, -diag / 2);
-    var grad = mCtx.createLinearGradient(bandCenter - bandWidth, 0, bandCenter + bandWidth, 0);
+    // Move a origem para o ponto da diagonal onde o centro da faixa deve estar agora,
+    // depois rotaciona alinhado à diagonal — assim a faixa sempre "nasce" no canto (0,0) real do canvas.
+    mCtx.translate(dirX * bandPos, dirY * bandPos);
+    mCtx.rotate(Math.atan2(h, w)); // alinha a faixa com o ângulo real da diagonal w×h (não fixo em 45°)
+    var grad = mCtx.createLinearGradient(-bandWidth, 0, bandWidth, 0);
     grad.addColorStop(0, 'rgba(255,255,255,0)');
     grad.addColorStop(0.5, 'rgba(255,255,255,1)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     mCtx.fillStyle = grad;
-    mCtx.fillRect(0, -diag, diag, diag * 3);
+    mCtx.fillRect(-bandWidth, -diag, bandWidth * 2, diag * 3);
     mCtx.restore();
 
     mCtx.globalCompositeOperation = 'destination-in'; // mantém só onde há módulo
