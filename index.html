@@ -8,133 +8,214 @@
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{
-    --bg:#0a0a0f;--surface:#13131a;--border:#1e1e2e;
-    --accent:#7c3aed;--accent2:#a855f7;--glow:rgba(124,58,237,0.15);
-    --text:#f0f0f8;--muted:#6b6b8a;
-    --ok-bg:rgba(34,197,94,.1);--ok-border:#22c55e;--ok-text:#4ade80;
-    --warn-bg:rgba(251,191,36,.1);--warn-border:#fbbf24;--warn-text:#fcd34d;
-    --fail-bg:rgba(239,68,68,.1);--fail-border:#ef4444;--fail-text:#f87171;
-    --info-bg:rgba(124,58,237,.12);--info-border:#7c3aed;--info-text:#c084fc;
-    --thumb-color: #ffffff; 
+    /* OPTICAL LAB — paleta preto/laranja, referência à luz de leitura de scanners óticos */
+    --bg:#070707;--surface:#121212;--border:#262626;--border-bright:#3a3a3a;
+    --accent:#ff7a1a;--accent2:#ffb347;--glow:rgba(255,122,26,0.16);
+    --text:#f5f3ea;--muted:#9a9a92;
+    --ok-bg:rgba(143,209,79,.1);--ok-border:#8fd14f;--ok-text:#a8e06a;
+    --warn-bg:rgba(255,122,26,.1);--warn-border:#ff7a1a;--warn-text:#ffb347;
+    --fail-bg:rgba(255,93,93,.1);--fail-border:#ff5d5d;--fail-text:#ff8a8a;
+    --info-bg:rgba(255,122,26,.12);--info-border:#ff7a1a;--info-text:#ffb347;
+    --thumb-color: #ffffff;
+    --glass-fill:rgba(255,255,255,.08);--glass-fill-hover:rgba(255,255,255,.13);
+    --glass-border-top:rgba(255,255,255,.55);
   }
-  body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center; overflow-x:hidden;}
-  header{width:100%;padding:20px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
-  
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 12% -8%, rgba(255,122,26,.16), transparent 60%),
+      radial-gradient(ellipse 700px 600px at 105% 25%, rgba(255,179,71,.07), transparent 55%),
+      radial-gradient(ellipse 900px 600px at 50% 115%, rgba(255,122,26,.09), transparent 60%),
+      var(--bg);
+    color:var(--text);font-family:'Inter','Space Grotesk',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center; overflow-x:hidden;
+  }
+
+  /* régua de calibração — referência à quiet zone de um QR real */
+  .calib-ruler{width:100%;max-width:620px;margin:18px auto 0;padding:0 16px;display:flex;align-items:flex-end;gap:0;height:14px;opacity:.5;box-sizing:border-box;}
+  .calib-ruler i{flex:1;border-left:1px solid var(--border-bright);height:5px;font-style:normal;}
+  .calib-ruler i:nth-child(5n+1){height:10px;border-color:var(--accent);}
+
+  header{width:100%;max-width:620px;padding:18px 16px 6px;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;}
+
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{width:32px;height:32px;border:1.5px solid var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:13px;color:var(--accent);position:relative;overflow:hidden;flex-shrink:0;}
+  .brand-mark img{width:100%;height:100%;object-fit:cover;}
+  .brand-name{font-family:'Space Mono',monospace;font-size:14px;letter-spacing:.02em;text-transform:uppercase;color:var(--text);}
+  .brand-name b{color:var(--accent);font-weight:700;}
+
   .header-user-zone { display: flex; align-items: center; gap: 12px; }
-  .btn-google-login { background: #fff; color: #13131a; border: none; padding: 8px 14px; border-radius: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: opacity 0.2s; }
+  .btn-google-login { background: #fff; color: #0a0a0a; border: none; padding: 8px 14px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: opacity 0.2s; }
   .btn-google-login:hover { opacity: 0.9; }
-  .user-logged-box { display: flex; align-items: center; gap: 10px; font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--muted); }
-  .btn-logout { background: none; border: 1px solid var(--border); color: var(--fail-text); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; font-family: 'Space Grotesk', sans-serif; }
+  .user-logged-box { display: flex; align-items: center; gap: 10px; font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+  .btn-logout { background: none; border: 1px solid var(--border); color: var(--fail-text); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.68rem; font-family: 'Inter', sans-serif; }
   .btn-logout:hover { background: var(--fail-bg); }
 
-  .badge{font-size:.65rem;font-family:'Space Mono',monospace;color:var(--accent2);border:1px solid var(--accent);padding:3px 10px;border-radius:20px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
-  
-  .hero{max-width:620px;width:100%;padding:40px 20px 24px;text-align:center}
-  .hero h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;line-height:1.1;letter-spacing:-.04em;margin-bottom:8px}
-  .hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent2),#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .hero p{color:var(--muted);font-size:.88rem;line-height:1.6}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px;width:100%;max-width:620px;margin:0 16px 40px; box-sizing:border-box;}
-  .fl{font-size:.68rem;font-family:'Space Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;display:block}
-  
-  input[type="url"]{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.91rem;padding:10px 13px;outline:none;transition:border-color .2s;margin-bottom:20px; box-sizing:border-box;}
+  .badge{font-size:.62rem;font-family:'Space Mono',monospace;color:var(--accent2);border:1px solid var(--accent);padding:3px 10px;border-radius:20px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:5px;}
+
+  .hero{max-width:620px;width:100%;padding:36px 20px 22px;box-sizing:border-box;}
+  .hero h1{font-family:'Space Mono',monospace;font-weight:400;font-size:clamp(1.5rem,4.2vw,2.15rem);line-height:1.14;letter-spacing:-.01em;margin-bottom:12px;}
+  .hero h1 em{font-style:normal;color:var(--accent);}
+  .hero p{color:var(--muted);font-size:.87rem;line-height:1.6;max-width:440px;}
+
+  /* osciloscópio de contraste — elemento-assinatura, mostra dado real calculado pelo app */
+  .scope{max-width:620px;width:100%;box-sizing:border-box;margin:0 16px 18px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+  .scope-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;}
+  .scope-label{font-family:'Space Mono',monospace;font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);}
+  .scope-value{font-family:'Space Mono',monospace;font-size:1.25rem;transition:color .2s;}
+  .scope-track{position:relative;height:26px;background:var(--bg);border-radius:5px;overflow:hidden;border:1px solid var(--border);}
+  .scope-fill{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,var(--fail-border),var(--accent) 55%,var(--ok-border));transition:width .35s ease;}
+  .scope-threshold{position:absolute;top:0;bottom:0;left:19%;width:1.5px;background:rgba(255,255,255,.65);}
+  .scope-threshold::after{content:'MÍN 4.0';position:absolute;top:-15px;left:0;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);white-space:nowrap;letter-spacing:.03em;}
+  .scope-ticks{display:flex;justify-content:space-between;margin-top:5px;}
+  .scope-ticks span{font-family:'Space Mono',monospace;font-size:.6rem;color:var(--muted);opacity:.65;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:620px;margin:0 16px 36px; box-sizing:border-box;}
+  .fl{font-size:.65rem;font-family:'Space Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px;display:block}
+
+  input[type="url"]{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:.91rem;padding:11px 13px;outline:none;transition:border-color .2s;margin-bottom:20px; box-sizing:border-box;}
   input[type="url"]:focus{border-color:var(--accent)}
-  
-  #drop-zone{border:2px dashed var(--border);border-radius:12px;padding:24px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;margin-bottom:12px;background:var(--bg)}
+
+  #drop-zone{border:1.5px dashed var(--border);border-radius:10px;padding:22px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;margin-bottom:12px;background:var(--bg)}
   #drop-zone:hover,#drop-zone.drag{border-color:var(--accent);background:var(--glow)}
   #drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-  .uico{width:36px;height:36px;margin:0 auto 8px;background:var(--glow);border:1px solid var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem}
-  
-  #logo-preview-wrap{display:none;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;align-items:center;gap:10px}
+  .uico{width:34px;height:34px;margin:0 auto 8px;background:var(--glow);border:1px solid var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--accent)}
+  .uico svg{width:16px;height:16px;}
+
+  #logo-preview-wrap{display:none;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 12px;align-items:center;gap:10px}
   #preview-thumb{max-height:40px;max-width:90px;border-radius:4px;object-fit:contain}
   #logo-status{font-size:.78rem;color:var(--accent2)}
-  #btn-clear{margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:.73rem;transition:border-color .2s}
-  
-  select.custom-select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.91rem;padding:10px 13px;outline:none;margin-bottom:20px;cursor:pointer; box-sizing:border-box;}
-  
-  .color-picking-zone{display:flex;flex-direction:column;gap:10px;background:var(--bg);padding:14px;border-radius:10px;border:1px solid var(--border);margin-bottom:20px}
-  
+  #btn-clear{margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:.72rem;transition:border-color .2s}
+
+  /* select continua existindo no DOM (o JS lê .value dele), mas fica invisível — os "chips" visuais
+     ao lado são só uma UI alternativa que sincroniza com ele via JS adicional */
+  select.custom-select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:.91rem;padding:11px 13px;outline:none;margin-bottom:14px;cursor:pointer; box-sizing:border-box;}
+
+  .chip-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px;}
+  .chip{background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'Inter',sans-serif;font-size:.78rem;padding:8px 13px;cursor:pointer;transition:all .15s;}
+  .chip:hover{border-color:var(--border-bright);color:var(--text);}
+  .chip.is-active{background:rgba(255,122,26,.13);border-color:var(--accent);color:var(--accent2);font-weight:600;}
+
+  .color-picking-zone{display:flex;flex-direction:column;gap:10px;background:var(--bg);padding:14px;border-radius:9px;border:1px solid var(--border);margin-bottom:20px}
+
   .palette-layout { display: flex; align-items: center; gap: 16px; width: 100%; margin-top: 4px; }
   #palette-swatches{display:flex;gap:8px;}
-  .swatch{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s, box-shadow .15s}
+  .swatch{width:32px;height:32px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s, box-shadow .15s}
   .swatch:hover{transform:scale(1.1)}
   .swatch.sel{box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px #fff; transform:scale(1.05)}
-  
+
   .spectrum-container { flex: 1; display: flex; align-items: center; position: relative;}
   #spectrum-slider {
-    -webkit-appearance: none; appearance: none; width: 100%; height: 14px; border-radius: 20px;
+    -webkit-appearance: none; appearance: none; width: 100%; height: 12px; border-radius: 20px;
     background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
-    outline: none; cursor: pointer; border: 1px solid rgba(255,255,255,0.05);
+    outline: none; cursor: pointer; border: 1px solid rgba(255,255,255,0.08);
   }
   #spectrum-slider::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none; width: 26px; height: 26px; border-radius: 50%;
+    -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%;
     background: var(--thumb-color); border: 3px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.6);
     transition: transform 0.1s; cursor: grab;
   }
   #spectrum-slider::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.15); }
   #spectrum-slider::-moz-range-thumb {
-    width: 26px; height: 26px; border-radius: 50%; background: var(--thumb-color); 
+    width: 24px; height: 24px; border-radius: 50%; background: var(--thumb-color); 
     border: 3px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.6); cursor: grab;
   }
 
   .slider-row{display:flex;align-items:center;gap:12px;margin-bottom:20px}
-  .slider-row input[type=range]{flex:1;accent-color:var(--accent2);cursor:pointer}
-  .slider-val{font-family:'Space Mono',monospace;font-size:.76rem;color:var(--accent2);min-width:34px;text-align:right}
+  .slider-row input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer;height:5px;}
+  .slider-val{font-family:'Space Mono',monospace;font-size:.74rem;color:var(--accent2);min-width:34px;text-align:right}
+
+  .check-row{display:flex;align-items:center;gap:11px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 13px;margin-bottom:20px;cursor:pointer;transition:border-color .15s;}
+  .check-row:hover{border-color:var(--border-bright);}
+  .check-row input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:18px;height:18px;border-radius:4px;border:1.5px solid var(--accent);background:rgba(255,122,26,.1);flex-shrink:0;cursor:pointer;position:relative;transition:background .15s;}
+  .check-row input[type="checkbox"]:checked{background:rgba(255,122,26,.2);}
+  .check-row input[type="checkbox"]:checked::after{content:'';position:absolute;left:5px;top:1px;width:5px;height:9px;border:solid var(--accent);border-width:0 2px 2px 0;transform:rotate(45deg);}
+  .check-row span{font-size:.85rem;}
+  .check-row .muted-sub{color:var(--muted);font-size:.76rem;}
 
   .divider{border:none;border-top:1px solid var(--border);margin:22px 0}
 
   #verify-log{margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
-  .vlog-item{display:flex;align-items:flex-start;gap:9px;border-radius:9px;padding:10px 13px;font-size:.82rem;line-height:1.4;word-break:break-word;}
+  .vlog-item{display:flex;align-items:flex-start;gap:9px;border-radius:8px;padding:10px 13px;font-size:.81rem;line-height:1.4;word-break:break-word;}
+  .vlog-icon{flex-shrink:0;margin-top:1px;display:inline-flex;}
+  .vlog-body{display:flex;flex-direction:column;gap:2px;}
+  .vlog-body strong{font-weight:600;}
+  .vlog-body span{color:inherit;opacity:.82;font-size:.95em;}
   .vlog-item.info{background:var(--info-bg);border:1px solid var(--info-border);color:var(--info-text)}
   .vlog-item.ok{background:var(--ok-bg);border:1px solid var(--ok-border);color:var(--ok-text)}
   .vlog-item.fail{background:var(--fail-bg);border:1px solid var(--fail-border);color:var(--fail-text)}
-  
-  .qr-container { position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; border-radius: 14px; overflow: hidden; background: #fff; padding: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 100%; box-sizing: border-box; }
+
+  /* palco do QR — fundo branco real (necessário p/ contraste de leitura) com glow de marca atrás */
+  .qr-stage-wrap{position:relative;display:flex;justify-content:center;margin-bottom:14px;}
+  .qr-stage-glow{position:absolute;width:75%;height:75%;top:8%;background:radial-gradient(circle, rgba(255,122,26,.30), transparent 70%);filter:blur(36px);z-index:0;pointer-events:none;}
+  .qr-container { position: relative; z-index:1; display: flex; justify-content: center; align-items: center; border-radius: 12px; overflow: hidden; background: #fff; padding: 14px; box-shadow: 0 16px 50px rgba(0,0,0,.55), 0 0 0 1px rgba(255,122,26,.12); width: 100%; box-sizing: border-box; }
   #qr-canvas { border-radius: 6px; width: 100%; max-width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: contain; transition: filter 0.2s; display: block; }
-  
+
   #live-overlay {
       position: absolute; inset:0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       color: #fff; font-family: 'Space Mono', monospace; font-size: 0.8rem; gap: 10px;
-      opacity: 0; pointer-events: none; transition: opacity 0.15s; border-radius: 14px; z-index: 10;
+      opacity: 0; pointer-events: none; transition: opacity 0.15s; border-radius: 12px; z-index: 10;
   }
   #live-overlay.active { opacity: 1; }
 
   #lock-overlay {
-      position: absolute; inset: 0; background: rgba(10,10,15,0.75); backdrop-filter: blur(10px);
+      position: absolute; inset: 0; background: rgba(7,7,7,0.78); backdrop-filter: blur(10px);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      color: #fff; font-family: 'Space Grotesk', sans-serif; text-align: center; padding: 20px;
-      opacity: 0; pointer-events: none; transition: opacity 0.4s; z-index: 20; border-radius: 14px;
+      color: #fff; font-family: 'Inter', sans-serif; text-align: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity 0.4s; z-index: 20; border-radius: 12px;
   }
   #lock-overlay.active { opacity: 1; pointer-events: all; }
-  .lock-icon { font-size: 2.5rem; margin-bottom: 8px; }
-  #lock-overlay h3 { font-size: 1.2rem; margin-bottom: 6px; color: var(--warn-text); }
-  #lock-overlay p { font-size: 0.85rem; color: #ddd; line-height: 1.4; }
-  .btn-unlock-small { margin-top: 15px; background: linear-gradient(135deg, var(--accent2), #ec4899); border: none; color: #fff; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; }
-  
-  .result-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:9px;font-size:.78rem;color:var(--muted);font-family:'Space Mono',monospace; flex-wrap: wrap; gap: 6px;}
-  
+  .lock-icon { width:38px;height:38px; margin:0 auto 10px; color:var(--accent2); }
+  .lock-icon svg{width:100%;height:100%;}
+  #lock-overlay h3 { font-size: 1.1rem; margin-bottom: 6px; color: var(--warn-text); font-family:'Space Mono',monospace; font-weight:400;}
+  #lock-overlay p { font-size: 0.84rem; color: #ddd; line-height: 1.4; }
+  .btn-unlock-small { margin-top: 15px; background:linear-gradient(160deg, rgba(255,179,71,.95), rgba(255,122,26,.92)); box-shadow:inset 0 1.5px 0 rgba(255,255,255,.6), 0 8px 24px rgba(255,122,26,.3); border: none; color: #1a0c00; padding: 9px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; }
+
+  .result-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.76rem;color:var(--muted);font-family:'Space Mono',monospace; flex-wrap: wrap; gap: 6px;}
+
   .actions{display:flex;flex-direction:column;gap:10px; width: 100%;}
-  .actions-row{display:flex;gap:8px; flex-wrap: wrap;} 
-  .btn-sec{flex:1 1 45%; background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.84rem;font-weight:500;padding:11px;cursor:pointer;transition:border-color .2s,background .2s; text-align: center; display:flex; align-items:center; justify-content:center; gap:6px;}
-  .btn-sec:hover{border-color:var(--accent2);background:var(--glow)}
-  
-  .btn-dl-digital { border-color: var(--info-border); color: #fff; }
-  .btn-dl-digital:hover { background: var(--info-bg); }
-  .btn-dl-digital.locked { opacity: 0.5; border-color: var(--border); color: var(--muted); cursor: not-allowed; }
-  .btn-dl-digital.locked:hover { background: none; }
-  
-  .btn-pro { border-color: #ec4899; color: #fff; position: relative; overflow:hidden;}
-  .btn-pro::after {content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transform:skewX(-20deg);transition:left 0.5s;}
-  .btn-pro:hover::after {left:200%;}
-  .btn-pro:hover { background: rgba(236,72,153,0.15); }
-  .btn-dl-video { margin-top:4px; flex-basis: 100%; background: linear-gradient(90deg, rgba(236,72,153,0.1), transparent);}
+  .actions-row{display:flex;gap:8px; flex-wrap: wrap;}
+
+  /* botões liquid glass — 2 camadas (overlay translúcido + highlight especular via box-shadow inset),
+     compatível com Chrome/Safari/Firefox sem depender de SVG feDisplacementMap (só Chrome) */
+  .btn-sec{
+    flex:1 1 45%; position:relative; overflow:hidden; isolation:isolate;
+    border-radius:11px; color:var(--text); font-family:'Inter',sans-serif; font-size:.83rem; font-weight:600;
+    padding:12px; cursor:pointer; text-align:center; display:flex; align-items:center; justify-content:center; gap:7px;
+    border:none; transition:transform .15s ease;
+    background:var(--glass-fill);
+    backdrop-filter:blur(18px) saturate(170%);
+    -webkit-backdrop-filter:blur(18px) saturate(170%);
+    box-shadow:
+      inset 0 1.5px 0 var(--glass-border-top),
+      inset 0 -1px 0 rgba(255,255,255,.05),
+      0 8px 24px rgba(0,0,0,.4);
+  }
+  .btn-sec::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(165deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,0) 38%);pointer-events:none;}
+  .btn-sec:active{transform:scale(.97);}
+  .btn-sec:hover{background:var(--glass-fill-hover);}
+
+  .btn-dl-digital { color: var(--text); }
+  .btn-dl-digital.locked { opacity: 0.45; cursor: not-allowed; }
+  .btn-dl-digital.locked:hover { background: var(--glass-fill); }
+
+  .btn-pro, .btn-dl-print {
+    color:#1a0c00; font-weight:700;
+    background:linear-gradient(160deg, rgba(255,179,71,.92), rgba(255,122,26,.88));
+    box-shadow:
+      inset 0 1.5px 0 rgba(255,255,255,.65),
+      inset 0 -2px 6px rgba(120,50,0,.22),
+      0 8px 26px rgba(255,122,26,.28);
+  }
+  .btn-pro::before, .btn-dl-print::before{background:linear-gradient(165deg, rgba(255,255,255,.32) 0%, rgba(255,255,255,0) 42%);}
+  .btn-pro:hover, .btn-dl-print:hover { filter:brightness(1.05); background:linear-gradient(160deg, rgba(255,179,71,.92), rgba(255,122,26,.88)); }
+  .btn-dl-video { margin-top:4px; flex-basis: 100%; }
 
   #loader-video{display:none;flex-direction:column;align-items:center;gap:5px;padding:16px;color:var(--muted);font-size:.84rem; margin-top: 10px;}
   .spin{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:sp .7s linear infinite}
   @keyframes sp{to{transform:rotate(360deg)}}
-  
+
   .paywall-modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.82); backdrop-filter: blur(12px);
       z-index: 9999; display: flex; align-items: center; justify-content: center;
       opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 20px;
   }
@@ -142,48 +223,53 @@
   .paywall-card {
       background: var(--surface); border: 1px solid var(--accent); border-radius: 16px;
       padding: 32px 24px; max-width: 400px; width: 100%; text-align: center;
-      box-shadow: 0 10px 40px rgba(124,58,237,0.2); transform: translateY(20px); transition: transform 0.3s;
+      box-shadow: 0 20px 60px rgba(255,122,26,0.15); transform: translateY(20px); transition: transform 0.3s;
   }
   .paywall-modal.active .paywall-card { transform: translateY(0); }
-  .pw-icon { font-size: 2.5rem; margin-bottom: 12px; }
-  .pw-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; color: #fff; }
-  .pw-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
-  .pw-features { text-align: left; margin-bottom: 24px; background: var(--bg); padding: 16px; border-radius: 8px; font-size: 0.85rem;}
-  .pw-features li { margin-bottom: 8px; color: var(--text); list-style: none; display: flex; gap: 8px; align-items: center;}
-  
+  .pw-icon { width:46px;height:46px; margin:0 auto 14px; color:var(--accent2);}
+  .pw-icon svg{width:100%;height:100%;}
+  .pw-title { font-family:'Space Mono',monospace; font-weight: 400; font-size: 1.3rem; margin-bottom: 8px; color: #fff; }
+  .pw-desc { font-size: 0.88rem; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+  .pw-features { text-align: left; margin-bottom: 24px; background: var(--bg); padding: 16px; border-radius: 8px; font-size: 0.84rem;}
+  .pw-features li { margin-bottom: 10px; color: var(--text); list-style: none; display: flex; gap: 9px; align-items: flex-start; line-height:1.45;}
+  .pw-features li svg{width:15px;height:15px;color:var(--ok-border);flex-shrink:0;margin-top:3px;}
+
   .btn-buy {
-      display: inline-block; width: 100%; background: linear-gradient(135deg, var(--accent2), #ec4899);
-      color: #fff; text-decoration: none; padding: 14px; border-radius: 10px; font-weight: 700;
-      transition: opacity 0.2s; border: none; font-family: 'Space Grotesk', sans-serif; cursor:pointer; font-size: 1rem;
+      display: flex; align-items:center; justify-content:center; gap:8px; width: 100%;
+      color: #1a0c00; text-decoration: none; padding: 14px; border-radius: 11px; font-weight: 700;
+      transition: filter 0.2s; border: none; font-family: 'Inter', sans-serif; cursor:pointer; font-size: 0.97rem;
+      background:linear-gradient(160deg, rgba(255,179,71,.95), rgba(255,122,26,.92));
+      box-shadow:inset 0 1.5px 0 rgba(255,255,255,.65), 0 10px 30px rgba(255,122,26,.3);
   }
-  .btn-buy:hover { opacity: 0.9; }
+  .btn-buy:hover { filter:brightness(1.05); }
   .btn-buy:disabled { opacity: 0.5; cursor: not-allowed; }
-  
+
   .btn-close-modal {
       background: none; border: none; color: var(--muted); margin-top: 16px; cursor: pointer;
-      font-family: 'Space Grotesk', sans-serif; text-decoration: underline; font-size: 0.85rem;
+      font-family: 'Inter', sans-serif; text-decoration: underline; font-size: 0.84rem;
   }
-  
+
   @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
   .pix-waiting { animation: pulse 1.5s infinite; }
 
-  #tutorial-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(3px); z-index: 9000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  #tutorial-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.78); backdrop-filter: blur(3px); z-index: 9000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   #tutorial-overlay.active { opacity: 1; pointer-events: all; }
-  
-  #tutorial-dialog { position: fixed; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--accent); border-radius: 14px; padding: 20px; width: 90%; max-width: 400px; z-index: 9005; box-shadow: 0 10px 40px rgba(124,58,237,0.4); opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; gap: 12px; }
-  #tutorial-dialog.active { opacity: 1; pointer-events: all; transform: translateX(-50%) translateY(0); }
-  
-  .tut-header { display: flex; align-items: center; gap: 10px; }
-  .tut-icon { font-size: 1.5rem; }
-  #tut-title { font-size: 1.1rem; color: #fff; font-weight: 700; margin: 0;}
-  #tut-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.4; margin:0;}
-  .tut-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
-  #tut-progress { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--accent2); }
-  .btn-tut { background: linear-gradient(135deg, var(--accent2), #ec4899); border: none; color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem;}
-  
-  .tut-highlight { position: relative; z-index: 9002 !important; box-shadow: 0 0 0 4px var(--surface), 0 0 0 6px var(--accent2), 0 0 30px rgba(236,72,153,0.4) !important; border-radius: 12px; transition: all 0.3s; pointer-events: none;}
 
-  footer{padding:16px;color:var(--muted);font-size:.68rem;font-family:'Space Mono',monospace;text-align:center}
+  #tutorial-dialog { position: fixed; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--accent); border-radius: 13px; padding: 20px; width: 90%; max-width: 400px; z-index: 9005; box-shadow: 0 20px 60px rgba(255,122,26,0.25); opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; gap: 12px; }
+  #tutorial-dialog.active { opacity: 1; pointer-events: all; transform: translateX(-50%) translateY(0); }
+
+  .tut-header { display: flex; align-items: center; gap: 10px; }
+  .tut-icon { width:22px;height:22px; color:var(--accent2); flex-shrink:0;}
+  .tut-icon svg{width:100%;height:100%;}
+  #tut-title { font-size: 1.05rem; color: #fff; font-weight: 400; font-family:'Space Mono',monospace; margin: 0;}
+  #tut-desc { font-size: 0.84rem; color: var(--muted); line-height: 1.4; margin:0;}
+  .tut-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+  #tut-progress { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--accent2); }
+  .btn-tut { background:linear-gradient(160deg, rgba(255,179,71,.95), rgba(255,122,26,.92)); box-shadow:inset 0 1.5px 0 rgba(255,255,255,.6); border: none; color: #1a0c00; padding: 9px 17px; border-radius: 9px; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.84rem;}
+
+  .tut-highlight { position: relative; z-index: 9002 !important; box-shadow: 0 0 0 4px var(--surface), 0 0 0 6px var(--accent), 0 0 30px rgba(255,122,26,0.4) !important; border-radius: 12px; transition: all 0.3s; pointer-events: none;}
+
+  footer{padding:16px;color:var(--muted);font-size:.66rem;font-family:'Space Mono',monospace;text-align:center}
 </style>
 
 <!-- SCRIPTS OFICIAIS DO SDK DO FIREBASE (V8 COMPAT) -->
@@ -192,9 +278,17 @@
 </head>
 <body>
 
+<div class="calib-ruler">
+  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+</div>
+
 <header>
-  <div class="logo">
-    <img src="LogoQRforma.png" alt="Logo QRforma" style="height: 52px; width: auto; border-radius: 8px; object-fit: contain;">
+  <div class="brand">
+    <div class="brand-mark"><img src="LogoQRforma.png" alt="QRforma"></div>
+    <div class="brand-name">QR<b>forma</b></div>
   </div>
   
   <div class="header-user-zone">
@@ -203,7 +297,10 @@
       Entrar com Google
     </button>
     <div class="user-logged-box" id="user-logged-box" style="display:none;">
-      <span class="badge" id="pro-badge" style="display:none; border-color:#ec4899; color:#ec4899;">👑 PRO</span>
+      <span class="badge" id="pro-badge" style="display:none; border-color:#ff7a1a; color:#ffb347;">
+        <svg style="width:11px;height:11px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 18h18M5 18V9l4 3 3-6 3 6 4-3v9"/></svg>
+        PRO
+      </span>
       <span id="user-email-display"></span>
       <button class="btn-logout" id="btn-logout-google">Sair</button>
     </div>
@@ -211,8 +308,22 @@
 </header>
 
 <div class="hero">
-  <h1>Transforme seus QR Codes<br>em algo <em>surpreendente</em></h1>
-  <p>Conecte sua marca ao cliente com transições fluidas de Motion Design a 60 FPS. Escolha tons livremente no gradiente com resposta em <strong>tempo real</strong>.</p>
+  <h1>QR codes que carregam <em>sua marca</em>, não só o link.</h1>
+  <p>Cor, logo e movimento calibrados automaticamente para manter contraste de leitura — com transições fluidas em 60 FPS.</p>
+</div>
+
+<div class="scope">
+  <div class="scope-head">
+    <span class="scope-label">Contraste de leitura</span>
+    <span class="scope-value" id="scope-value">—</span>
+  </div>
+  <div class="scope-track">
+    <div class="scope-threshold"></div>
+    <div class="scope-fill" id="scope-fill"></div>
+  </div>
+  <div class="scope-ticks">
+    <span>1</span><span>4</span><span>7</span><span>10</span><span>13</span><span>16</span><span>19</span><span>21</span>
+  </div>
 </div>
 
 <div class="card">
@@ -222,32 +333,41 @@
   <label class="fl">Logo da marca</label>
   <div id="drop-zone">
     <input type="file" id="logo-input" accept="image/*"/>
-    <div class="uico">🖼</div>
+    <div class="uico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>
     <p><strong>Clique para escolher</strong> sua logo<br><span style="font-size:.76rem">PNG transparente recomendado</span></p>
   </div>
   <div id="logo-preview-wrap">
     <img id="preview-thumb" alt=""/>
     <span id="logo-status"></span>
-    <button id="btn-clear">✕ remover</button>
+    <button id="btn-clear">remover</button>
   </div>
 
-  <label class="fl">Posição da Logo (Animação)</label>
+  <label class="fl">Posição da logo (animação)</label>
   <select id="logo-style" class="custom-select">
-    <option value="center">🎯 Emblema Central (Encolhe p/ o Meio)</option>
-    <option value="background">👻 Marca d'água (Misturada ao Fundo)</option>
-    <option value="particles">✨ Poeira Mágica (Partículas ao Redor da Logo)</option>
+    <option value="center">Emblema central — encolhe ao meio</option>
+    <option value="background">Marca d'água — misturada ao fundo</option>
+    <option value="particles">Poeira mágica — partículas ao redor da logo</option>
   </select>
 
-  <label class="fl">Estilo dos Pontinhos (Módulos)</label>
-  <select id="qr-style" class="custom-select">
-    <option value="organic">🦠 Orgânico (Conectado / Líquido)</option>
-    <option value="circle">● Círculos Clássicos</option>
-    <option value="classic">⬛ Quadrados (Padrão Raiz)</option>
-    <option value="square">■ Quadrados Modernos</option>
-    <option value="fluid">💧 Gotas Fluidas</option>
-    <option value="diamond">✦ Diamantes Geométricos</option>
-    <option value="hexagon">⬡ Hexagonal (Tech)</option>
+  <label class="fl">Estilo dos módulos</label>
+  <select id="qr-style" class="custom-select" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;" aria-hidden="true" tabindex="-1">
+    <option value="organic">Orgânico</option>
+    <option value="circle">Círculos clássicos</option>
+    <option value="classic">Quadrados (padrão raiz)</option>
+    <option value="square">Quadrados modernos</option>
+    <option value="fluid">Gotas fluidas</option>
+    <option value="diamond">Diamantes geométricos</option>
+    <option value="hexagon">Hexagonal</option>
   </select>
+  <div class="chip-row" id="qr-style-chips">
+    <button type="button" class="chip is-active" data-style="organic">Orgânico</button>
+    <button type="button" class="chip" data-style="circle">Círculos</button>
+    <button type="button" class="chip" data-style="classic">Quadrados</button>
+    <button type="button" class="chip" data-style="square">Quad. modernos</button>
+    <button type="button" class="chip" data-style="fluid">Gotas</button>
+    <button type="button" class="chip" data-style="diamond">Diamantes</button>
+    <button type="button" class="chip" data-style="hexagon">Hexagonal</button>
+  </div>
 
   <div class="color-picking-zone" id="tut-target-colors">
     <div class="color-header-actions" style="margin-bottom: 4px;">
@@ -272,9 +392,9 @@
     <span class="slider-val" id="sl-logo-v">22%</span>
   </div>
 
-  <label class="check-row" for="chk-light-sweep" style="display:flex; align-items:center; gap:9px; background:var(--bg); border:1px solid var(--border); border-radius:9px; padding:11px 13px; margin-bottom:20px; cursor:pointer; transition:border-color .2s;">
-    <input type="checkbox" id="chk-light-sweep" style="width:17px; height:17px; accent-color:var(--accent2); cursor:pointer; flex-shrink:0;"/>
-    <span style="font-size:.86rem;">💫 Efeito Revelação por Luz <span style="color:var(--muted); font-size:.76rem;">(varredura de brilho sobre o QR)</span></span>
+  <label class="check-row" for="chk-light-sweep">
+    <input type="checkbox" id="chk-light-sweep"/>
+    <span><svg style="width:13px;height:13px;display:inline-block;vertical-align:-2px;margin-right:5px;color:var(--accent2)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2v3M16.5 19v3M2 9.5h3M19 16.5h3M5.5 5.5l2 2M16.5 16.5l2 2M18.5 5.5l-2 2M7.5 16.5l-2 2"/><circle cx="12" cy="12" r="3.5"/></svg>Revelação por luz <span class="muted-sub">— varredura de brilho sobre o QR</span></span>
   </label>
 
   <hr class="divider"/>
@@ -283,23 +403,26 @@
   
   <div class="result-meta">
     <span>Status do Scanner: <strong id="final-conf">—</strong></span>
-    <span style="font-size:0.65rem; padding:2px 6px; background:var(--info-bg); color:var(--info-text); border-radius:4px;">MOTION ATIVO (15s | 60FPS)</span>
+    <span style="font-size:0.62rem; padding:2px 7px; background:var(--info-bg); color:var(--info-text); border-radius:4px; font-family:'Space Mono',monospace;">MOTION ATIVO (15s · 60FPS)</span>
   </div>
   
-  <div class="qr-container">
-    <div id="live-overlay">
-      <div class="spin" style="width:24px;height:24px;"></div>
-      Processando Design...
-    </div>
-    
-    <div id="lock-overlay">
-      <div class="lock-icon">🔒</div>
-      <h3>Teste Grátis Esgotado</h3>
-      <p>Você atingiu o limite de 3 arquivos visuais.<br>Libere a versão PRO para uso ilimitado.</p>
-      <button class="btn-unlock-small" onclick="triggerPaywallFlow()">Desbloquear Agora</button>
-    </div>
+  <div class="qr-stage-wrap">
+    <div class="qr-stage-glow"></div>
+    <div class="qr-container">
+      <div id="live-overlay">
+        <div class="spin" style="width:24px;height:24px;"></div>
+        Processando Design...
+      </div>
+      
+      <div id="lock-overlay">
+        <div class="lock-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <h3>Teste grátis esgotado</h3>
+        <p>Você atingiu o limite de 3 arquivos visuais.<br>Libere a versão PRO para uso ilimitado.</p>
+        <button class="btn-unlock-small" onclick="triggerPaywallFlow()">Desbloquear agora</button>
+      </div>
 
-    <canvas id="qr-canvas"></canvas>
+      <canvas id="qr-canvas"></canvas>
+    </div>
   </div>
   
   <div id="loader-video">
@@ -309,34 +432,43 @@
 
   <div class="actions" id="download-actions">
     <div class="actions-row">
-      <button class="btn-sec btn-dl-digital" id="btn-png-digital">⬇ Tela Digital (Grátis)</button>
-      <button class="btn-sec btn-pro" id="btn-png-print">🔒 Impressão (PRO)</button>
+      <button class="btn-sec btn-dl-digital" id="btn-png-digital">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Tela digital (grátis)
+      </button>
+      <button class="btn-sec btn-pro" id="btn-png-print">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        Impressão (PRO)
+      </button>
     </div>
-    <button class="btn-sec btn-pro btn-dl-video" id="btn-dl-video">🎬 Baixar Vídeo Full HD 60FPS (PRO)</button>
+    <button class="btn-sec btn-pro btn-dl-video" id="btn-dl-video">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      Baixar vídeo Full HD 60FPS (PRO)
+    </button>
   </div>
 </div>
 
-<footer>QRforma · Sistema Autenticado · v61.1</footer>
+<footer>QRforma · Sistema Autenticado · v62.0</footer>
 
 <!-- MODAL DE PAYWALL PIX DINÂMICO -->
 <div class="paywall-modal" id="paywall-modal">
     <div class="paywall-card">
-        <div class="pw-icon">🚀</div>
-        <h2 class="pw-title">Desbloqueie o Potencial Máximo</h2>
+        <div class="pw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg></div>
+        <h2 class="pw-title">Desbloqueie o potencial máximo</h2>
         <p class="pw-desc">A versão básica é grátis, mas arquivos em alta definição e animações são recursos exclusivos da versão <strong>PRO</strong>.</p>
         
         <ul class="pw-features">
-            <li>✅ Downloads ilimitados (Acesso Grátis esgotado)</li>
-            <li>✅ <strong>Vídeos Fluidos 60FPS</strong> para Telões e Instagram</li>
-            <li>✅ <strong>Arquivos para Impressão</strong> de alta qualidade</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Downloads ilimitados (acesso grátis esgotado)</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Vídeos fluidos 60FPS</strong> para telões e redes sociais</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Arquivos para impressão</strong> de alta qualidade</span></li>
         </ul>
 
-        <button class="btn-buy" id="btn-gerar-pix">Gerar PIX para Liberar (R$ 19,90)</button>
+        <button class="btn-buy" id="btn-gerar-pix">Gerar PIX para liberar (R$ 19,90)</button>
         
         <div id="area-pix" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid var(--border);">
             <canvas id="canvas-qr-pix" style="width:100%; max-width:180px; aspect-ratio: 1/1; border-radius:10px; margin-bottom:10px; border: 2px solid var(--accent); display: block; margin: 0 auto;"></canvas>
-            <input type="text" id="input-copia-cola" readonly value="" style="width:100%; padding:10px; font-size:0.7rem; border-radius:6px; border:1px solid var(--accent); background:var(--bg); color:var(--text); cursor:pointer; text-align:center;" title="Clique para copiar" onclick="this.select(); document.execCommand('copy'); alert('Código PIX Copiado!');" />
-            <p class="pix-waiting" style="font-size:0.8rem; color:var(--ok-text); margin-top:10px;">⏳ Aguardando pagamento... <br>A tela será liberada automaticamente.</p>
+            <input type="text" id="input-copia-cola" readonly value="" style="width:100%; padding:10px; font-size:0.7rem; border-radius:6px; border:1px solid var(--accent); background:var(--bg); color:var(--text); cursor:pointer; text-align:center;" title="Clique para copiar" onclick="this.select(); document.execCommand('copy'); alert('Código PIX copiado!');" />
+            <p class="pix-waiting" style="font-size:0.8rem; color:var(--ok-text); margin-top:10px;">Aguardando pagamento... <br>A tela será liberada automaticamente.</p>
         </div>
         
         <button class="btn-close-modal" onclick="document.getElementById('paywall-modal').classList.remove('active')">Voltar</button>
@@ -347,7 +479,7 @@
 <div id="tutorial-overlay"></div>
 <div id="tutorial-dialog">
     <div class="tut-header">
-        <span class="tut-icon">✨</span>
+        <span class="tut-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9.5 2v3M16.5 19v3M2 9.5h3M19 16.5h3M5.5 5.5l2 2M16.5 16.5l2 2M18.5 5.5l-2 2M7.5 16.5l-2 2"/><circle cx="12" cy="12" r="3.5"/></svg></span>
         <h3 id="tut-title">Bem-vindo ao QRforma</h3>
     </div>
     <p id="tut-desc">Vamos criar o seu primeiro QR Code animado em 5 passos rápidos.</p>
@@ -466,7 +598,7 @@ function unlockProFeatures() {
     
     let btnVideo = document.getElementById('btn-dl-video');
     if(btnVideo) {
-        btnVideo.innerHTML = '🎬 Baixar Vídeo Full HD 60FPS (Ilimitado)';
+        btnVideo.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Baixar vídeo Full HD 60FPS (ilimitado)';
         btnVideo.classList.remove('btn-pro');
     }
     
@@ -525,7 +657,7 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
                 if (checkData.status === "pago") {
                     clearInterval(checkInterval);
                     unlockProFeatures();
-                    alert("✅ Pagamento aprovado! O QRforma Pro foi desbloqueado com sucesso.");
+                    alert("Pagamento aprovado! O QRforma Pro foi desbloqueado com sucesso.");
                 }
             } catch (err) { }
         }, 4000);
@@ -540,11 +672,11 @@ document.getElementById('btn-gerar-pix').addEventListener('click', async functio
 
 // --- SISTEMA DE ONBOARDING (TUTORIAL) ---
 const tutorialSteps = [
-    { target: 'qr-url', title: '🔗 Destino do QR Code', desc: 'Cole aqui o link para onde o seu cliente vai ao escanear (ex: Instagram, Cardápio, WhatsApp).' },
-    { target: 'drop-zone', title: '🖼️ Identidade Visual', desc: 'Suba a logo da sua marca clicando aqui. Imagens com fundo transparente dão o melhor resultado.' },
-    { target: 'tut-target-colors', title: '🎨 Estilos e Cores', desc: 'Deixe com a sua cara! Arraste essa barra para pintar o QR Code inteiro com as cores da sua marca.' },
-    { target: 'tut-target-slider', title: '🎚️ Ajuste Fino', desc: 'Controle o tamanho ou a mistura da logo com o fundo para garantir que o sensor da câmera consiga ler o código.' },
-    { target: 'download-actions', title: '🚀 Tudo Pronto!', desc: 'Baixe as telas digitais ou libere a versão PRO para exportar vídeos animados em 60FPS para suas redes.' }
+    { target: 'qr-url', title: 'Destino do QR code', desc: 'Cole aqui o link para onde o seu cliente vai ao escanear (ex: Instagram, Cardápio, WhatsApp).' },
+    { target: 'drop-zone', title: 'Identidade visual', desc: 'Suba a logo da sua marca clicando aqui. Imagens com fundo transparente dão o melhor resultado.' },
+    { target: 'tut-target-colors', title: 'Estilos e cores', desc: 'Deixe com a sua cara! Arraste essa barra para pintar o QR Code inteiro com as cores da sua marca.' },
+    { target: 'tut-target-slider', title: 'Ajuste fino', desc: 'Controle o tamanho ou a mistura da logo com o fundo para garantir que o sensor da câmera consiga ler o código.' },
+    { target: 'download-actions', title: 'Tudo pronto', desc: 'Baixe as telas digitais ou libere a versão PRO para exportar vídeos animados em 60FPS para suas redes.' }
 ];
 
 let currentTutStep = -1;
@@ -611,7 +743,7 @@ function applyBlurIfLimitReached() {
         let btnDigital = document.getElementById('btn-png-digital');
         if(btnDigital) {
             btnDigital.classList.add('locked');
-            btnDigital.innerHTML = '🔒 Grátis Esgotado';
+            btnDigital.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Grátis esgotado';
         }
         return true;
     }
@@ -1187,7 +1319,7 @@ function animationLoop(timestamp) {
 async function runEngine() {
   var url = document.getElementById('qr-url').value; var logBox = document.getElementById('verify-log'); var finalConf = document.getElementById('final-conf');
   if (!url || url.trim() === "") {
-      logBox.innerHTML = `<div class="vlog-item info"><span class="vlog-icon">ℹ</span><div class="vlog-body"><strong>Aguardando link válido...</strong><span>Digite o destino do QR Code.</span></div></div>`;
+      logBox.innerHTML = `<div class="vlog-item info"><span class="vlog-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span><div class="vlog-body"><strong>Aguardando link válido</strong><span>Digite o destino do QR code.</span></div></div>`;
       finalConf.innerHTML = '—'; if(animRequest) cancelAnimationFrame(animRequest); return; 
   }
   if(animRequest) cancelAnimationFrame(animRequest); animStartTime = 0;
@@ -1217,6 +1349,17 @@ async function runEngine() {
     var scanResult = simulateRealScan(layersScan.merged);
     var validationPassed = false;
 
+    // Atualiza o osciloscópio de contraste com o valor real calculado acima (não decorativo —
+    // é o mesmo número usado pela validação de leitura no modo 'center').
+    var scopeValueEl = document.getElementById('scope-value');
+    var scopeFillEl = document.getElementById('scope-fill');
+    if (scopeValueEl && scopeFillEl) {
+        var displayContrast = Math.min(safeColorContrast, 21);
+        scopeValueEl.textContent = safeColorContrast.toFixed(1) + ':1';
+        scopeValueEl.style.color = safeColorContrast >= 4.0 ? 'var(--ok-border)' : (safeColorContrast >= 2.5 ? 'var(--warn-border)' : 'var(--fail-border)');
+        scopeFillEl.style.width = Math.max(2, (displayContrast / 21) * 100) + '%';
+    }
+
     if (logoStyleMode === 'center') {
         validationPassed = (safeColorContrast >= 2.5); 
     } else {
@@ -1226,17 +1369,17 @@ async function runEngine() {
     }
     
     if (validationPassed) {
-        logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>O design está com contraste ideal e dados mapeados com segurança.</span></div></div>`;
+        logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg></span><div class="vlog-body"><strong>Validação de leitura aprovada</strong><span>O design está com contraste ideal e dados mapeados com segurança.</span></div></div>`;
         finalConf.innerHTML = '<strong style="color:var(--ok-border)">Operacional</strong>';
     } else {
-        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Câmera pode ter dificuldade. Aumente o contraste (troque a cor do QR).</span></div></div>`;
+        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><div class="vlog-body"><strong>Validação de leitura falhou</strong><span>Câmera pode ter dificuldade. Aumente o contraste (troque a cor do QR).</span></div></div>`;
         finalConf.innerHTML = '<strong style="color:var(--fail-border)">Risco Detetado</strong>';
     }
     
     var destCanvas = document.getElementById('qr-canvas'); if(destCanvas) { destCanvas.width = 1200; destCanvas.height = 1200; }
     drawAnimationFrame(destCanvas.getContext('2d'), 1200, 1200, 9999); animRequest = requestAnimationFrame(animationLoop);
   } catch (err) {
-    logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Erro no Processamento</strong><span>${err.message || 'Falha ao renderizar. Verifique o link.'}</span></div></div>`;
+    logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><div class="vlog-body"><strong>Erro no processamento</strong><span>${err.message || 'Falha ao renderizar. Verifique o link.'}</span></div></div>`;
     finalConf.innerHTML = '<strong style="color:var(--fail-border)">Falha Crítica</strong>';
   } finally { if(overlay) overlay.classList.remove('active'); }
 }
@@ -1245,6 +1388,19 @@ function triggerLiveUpdate() { clearTimeout(liveUpdateTimer); liveUpdateTimer = 
 
 document.getElementById('qr-url').addEventListener('input', triggerLiveUpdate);
 document.getElementById('qr-style').addEventListener('change', triggerLiveUpdate);
+
+// Sincroniza os "chips" visuais de estilo com o <select id="qr-style"> real (mantido no DOM,
+// só visualmente oculto) — assim toda a lógica existente que lê qr-style.value continua igual.
+document.querySelectorAll('#qr-style-chips .chip').forEach(function(chipEl) {
+    chipEl.addEventListener('click', function() {
+        var styleValue = chipEl.getAttribute('data-style');
+        var hiddenSelect = document.getElementById('qr-style');
+        hiddenSelect.value = styleValue;
+        hiddenSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        document.querySelectorAll('#qr-style-chips .chip').forEach(function(c) { c.classList.remove('is-active'); });
+        chipEl.classList.add('is-active');
+    });
+});
 document.getElementById('chk-light-sweep').addEventListener('change', triggerLiveUpdate);
 
 document.getElementById('btn-png-digital').onclick = function(){
