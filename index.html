@@ -3,1474 +3,293 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QRforma Pro · Live Spectrum Engine</title>
+<title>QRforma — Preview de Direção Visual</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{
-    --bg:#0a0a0f;--surface:#13131a;--border:#1e1e2e;
-    --accent:#7c3aed;--accent2:#a855f7;--glow:rgba(124,58,237,0.15);
-    --text:#f0f0f8;--muted:#6b6b8a;
-    --ok-bg:rgba(34,197,94,.1);--ok-border:#22c55e;--ok-text:#4ade80;
-    --warn-bg:rgba(251,191,36,.1);--warn-border:#fbbf24;--warn-text:#fcd34d;
-    --fail-bg:rgba(239,68,68,.1);--fail-border:#ef4444;--fail-text:#f87171;
-    --info-bg:rgba(124,58,237,.12);--info-border:#7c3aed;--info-text:#c084fc;
-    --thumb-color: #ffffff; 
-  }
-  body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center; overflow-x:hidden;}
-  header{width:100%;padding:20px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
-  
-  .header-user-zone { display: flex; align-items: center; gap: 12px; }
-  .btn-google-login { background: #fff; color: #13131a; border: none; padding: 8px 14px; border-radius: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: opacity 0.2s; }
-  .btn-google-login:hover { opacity: 0.9; }
-  .user-logged-box { display: flex; align-items: center; gap: 10px; font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--muted); }
-  .btn-logout { background: none; border: 1px solid var(--border); color: var(--fail-text); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; font-family: 'Space Grotesk', sans-serif; }
-  .btn-logout:hover { background: var(--fail-bg); }
+@import url('https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
-  .badge{font-size:.65rem;font-family:'Space Mono',monospace;color:var(--accent2);border:1px solid var(--accent);padding:3px 10px;border-radius:20px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
-  
-  .hero{max-width:620px;width:100%;padding:40px 20px 24px;text-align:center}
-  .hero h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;line-height:1.1;letter-spacing:-.04em;margin-bottom:8px}
-  .hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent2),#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .hero p{color:var(--muted);font-size:.88rem;line-height:1.6}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px;width:100%;max-width:620px;margin:0 16px 40px; box-sizing:border-box;}
-  .fl{font-size:.68rem;font-family:'Space Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;display:block}
-  
-  input[type="url"]{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.91rem;padding:10px 13px;outline:none;transition:border-color .2s;margin-bottom:20px; box-sizing:border-box;}
-  input[type="url"]:focus{border-color:var(--accent)}
-  
-  #drop-zone{border:2px dashed var(--border);border-radius:12px;padding:24px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;margin-bottom:12px;background:var(--bg)}
-  #drop-zone:hover,#drop-zone.drag{border-color:var(--accent);background:var(--glow)}
-  #drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-  .uico{width:36px;height:36px;margin:0 auto 8px;background:var(--glow);border:1px solid var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem}
-  
-  #logo-preview-wrap{display:none;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;align-items:center;gap:10px}
-  #preview-thumb{max-height:40px;max-width:90px;border-radius:4px;object-fit:contain}
-  #logo-status{font-size:.78rem;color:var(--accent2)}
-  #btn-clear{margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:.73rem;transition:border-color .2s}
-  
-  select.custom-select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.91rem;padding:10px 13px;outline:none;margin-bottom:20px;cursor:pointer; box-sizing:border-box;}
-  
-  .color-picking-zone{display:flex;flex-direction:column;gap:10px;background:var(--bg);padding:14px;border-radius:10px;border:1px solid var(--border);margin-bottom:20px}
-  
-  .palette-layout { display: flex; align-items: center; gap: 16px; width: 100%; margin-top: 4px; }
-  #palette-swatches{display:flex;gap:8px;}
-  .swatch{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s, box-shadow .15s}
-  .swatch:hover{transform:scale(1.1)}
-  .swatch.sel{box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px #fff; transform:scale(1.05)}
-  
-  .spectrum-container { flex: 1; display: flex; align-items: center; position: relative;}
-  #spectrum-slider {
-    -webkit-appearance: none; appearance: none; width: 100%; height: 14px; border-radius: 20px;
-    background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
-    outline: none; cursor: pointer; border: 1px solid rgba(255,255,255,0.05);
-  }
-  #spectrum-slider::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none; width: 26px; height: 26px; border-radius: 50%;
-    background: var(--thumb-color); border: 3px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.6);
-    transition: transform 0.1s; cursor: grab;
-  }
-  #spectrum-slider::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.15); }
-  #spectrum-slider::-moz-range-thumb {
-    width: 26px; height: 26px; border-radius: 50%; background: var(--thumb-color); 
-    border: 3px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.6); cursor: grab;
-  }
+:root{
+  --ink:#0c0d0a;
+  --surface:#171913;
+  --surface-raised:#1f2218;
+  --line:#2a2d22;
+  --line-bright:#3d4130;
+  --amber:#ff8a3d;
+  --amber-light:#ffd166;
+  --paper:#f5f3ea;
+  --paper-dim:#a8a695;
+  --ok:#8fd14f;
+  --warn:#ff8a3d;
+  --fail:#ff5d5d;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -5%, rgba(255,138,61,.16), transparent 60%),
+    radial-gradient(ellipse 700px 600px at 100% 30%, rgba(255,209,102,.07), transparent 55%),
+    radial-gradient(ellipse 800px 500px at 50% 110%, rgba(255,138,61,.08), transparent 60%),
+    var(--ink);
+  color:var(--paper);
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+  padding:48px 24px;
+}
+.wrap{max-width:640px;margin:0 auto}
 
-  .slider-row{display:flex;align-items:center;gap:12px;margin-bottom:20px}
-  .slider-row input[type=range]{flex:1;accent-color:var(--accent2);cursor:pointer}
-  .slider-val{font-family:'Space Mono',monospace;font-size:.76rem;color:var(--accent2);min-width:34px;text-align:right}
+/* régua de calibração — referência real à quiet zone do QR (margem medida) */
+.ruler{
+  display:flex; align-items:flex-end; gap:0; height:18px; margin-bottom:32px; opacity:.55;
+}
+.ruler i{flex:1; border-left:1px solid var(--line-bright); height:6px;}
+.ruler i:nth-child(5n+1){height:12px; border-color:var(--amber);}
+.ruler::after{content:''}
 
-  .divider{border:none;border-top:1px solid var(--border);margin:22px 0}
+header{display:flex; align-items:center; justify-content:space-between; margin-bottom:40px;}
+.brand{display:flex; align-items:center; gap:10px;}
+.brand-mark{
+  width:34px; height:34px; border:1.5px solid var(--amber); border-radius:4px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Fragment Mono', monospace; font-size:13px; color:var(--amber);
+  position:relative;
+}
+.brand-mark::after{
+  content:''; position:absolute; inset:6px; border:1px solid var(--amber); opacity:.4;
+}
+.brand-name{font-family:'Fragment Mono', monospace; font-size:15px; letter-spacing:.02em; text-transform:uppercase;}
+.brand-name b{color:var(--amber); font-weight:400;}
 
-  #verify-log{margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
-  .vlog-item{display:flex;align-items:flex-start;gap:9px;border-radius:9px;padding:10px 13px;font-size:.82rem;line-height:1.4;word-break:break-word;}
-  .vlog-item.info{background:var(--info-bg);border:1px solid var(--info-border);color:var(--info-text)}
-  .vlog-item.ok{background:var(--ok-bg);border:1px solid var(--ok-border);color:var(--ok-text)}
-  .vlog-item.fail{background:var(--fail-bg);border:1px solid var(--fail-border);color:var(--fail-text)}
-  
-  .qr-container { position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; border-radius: 14px; overflow: hidden; background: #fff; padding: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 100%; box-sizing: border-box; }
-  #qr-canvas { border-radius: 6px; width: 100%; max-width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: contain; transition: filter 0.2s; display: block; }
-  
-  #live-overlay {
-      position: absolute; inset:0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      color: #fff; font-family: 'Space Mono', monospace; font-size: 0.8rem; gap: 10px;
-      opacity: 0; pointer-events: none; transition: opacity 0.15s; border-radius: 14px; z-index: 10;
-  }
-  #live-overlay.active { opacity: 1; }
+.tag{
+  font-family:'Space Mono', monospace; font-size:10.5px; color:var(--paper-dim);
+  border:1px solid var(--line-bright); padding:5px 10px; border-radius:3px;
+  text-transform:uppercase; letter-spacing:.08em;
+}
 
-  #lock-overlay {
-      position: absolute; inset: 0; background: rgba(10,10,15,0.75); backdrop-filter: blur(10px);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      color: #fff; font-family: 'Space Grotesk', sans-serif; text-align: center; padding: 20px;
-      opacity: 0; pointer-events: none; transition: opacity 0.4s; z-index: 20; border-radius: 14px;
-  }
-  #lock-overlay.active { opacity: 1; pointer-events: all; }
-  .lock-icon { font-size: 2.5rem; margin-bottom: 8px; }
-  #lock-overlay h3 { font-size: 1.2rem; margin-bottom: 6px; color: var(--warn-text); }
-  #lock-overlay p { font-size: 0.85rem; color: #ddd; line-height: 1.4; }
-  .btn-unlock-small { margin-top: 15px; background: linear-gradient(135deg, var(--accent2), #ec4899); border: none; color: #fff; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; }
-  
-  .result-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:9px;font-size:.78rem;color:var(--muted);font-family:'Space Mono',monospace; flex-wrap: wrap; gap: 6px;}
-  
-  .actions{display:flex;flex-direction:column;gap:10px; width: 100%;}
-  .actions-row{display:flex;gap:8px; flex-wrap: wrap;} 
-  .btn-sec{flex:1 1 45%; background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.84rem;font-weight:500;padding:11px;cursor:pointer;transition:border-color .2s,background .2s; text-align: center; display:flex; align-items:center; justify-content:center; gap:6px;}
-  .btn-sec:hover{border-color:var(--accent2);background:var(--glow)}
-  
-  .btn-dl-digital { border-color: var(--info-border); color: #fff; }
-  .btn-dl-digital:hover { background: var(--info-bg); }
-  .btn-dl-digital.locked { opacity: 0.5; border-color: var(--border); color: var(--muted); cursor: not-allowed; }
-  .btn-dl-digital.locked:hover { background: none; }
-  
-  .btn-pro { border-color: #ec4899; color: #fff; position: relative; overflow:hidden;}
-  .btn-pro::after {content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transform:skewX(-20deg);transition:left 0.5s;}
-  .btn-pro:hover::after {left:200%;}
-  .btn-pro:hover { background: rgba(236,72,153,0.15); }
-  .btn-dl-video { margin-top:4px; flex-basis: 100%; background: linear-gradient(90deg, rgba(236,72,153,0.1), transparent);}
+h1{
+  font-family:'Fragment Mono', monospace;
+  font-weight:400;
+  font-size:clamp(28px,5vw,38px);
+  line-height:1.08;
+  letter-spacing:-.01em;
+  margin-bottom:14px;
+  max-width:480px;
+}
+h1 em{font-style:normal; color:var(--amber);}
+.lede{color:var(--paper-dim); font-size:14.5px; line-height:1.6; max-width:420px; margin-bottom:40px;}
 
-  #loader-video{display:none;flex-direction:column;align-items:center;gap:5px;padding:16px;color:var(--muted);font-size:.84rem; margin-top: 10px;}
-  .spin{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:sp .7s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}}
-  
-  .paywall-modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
-      z-index: 9999; display: flex; align-items: center; justify-content: center;
-      opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 20px;
-  }
-  .paywall-modal.active { opacity: 1; pointer-events: all; }
-  .paywall-card {
-      background: var(--surface); border: 1px solid var(--accent); border-radius: 16px;
-      padding: 32px 24px; max-width: 400px; width: 100%; text-align: center;
-      box-shadow: 0 10px 40px rgba(124,58,237,0.2); transform: translateY(20px); transition: transform 0.3s;
-  }
-  .paywall-modal.active .paywall-card { transform: translateY(0); }
-  .pw-icon { font-size: 2.5rem; margin-bottom: 12px; }
-  .pw-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; color: #fff; }
-  .pw-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
-  .pw-features { text-align: left; margin-bottom: 24px; background: var(--bg); padding: 16px; border-radius: 8px; font-size: 0.85rem;}
-  .pw-features li { margin-bottom: 8px; color: var(--text); list-style: none; display: flex; gap: 8px; align-items: center;}
-  
-  .btn-buy {
-      display: inline-block; width: 100%; background: linear-gradient(135deg, var(--accent2), #ec4899);
-      color: #fff; text-decoration: none; padding: 14px; border-radius: 10px; font-weight: 700;
-      transition: opacity 0.2s; border: none; font-family: 'Space Grotesk', sans-serif; cursor:pointer; font-size: 1rem;
-  }
-  .btn-buy:hover { opacity: 0.9; }
-  .btn-buy:disabled { opacity: 0.5; cursor: not-allowed; }
-  
-  .btn-close-modal {
-      background: none; border: none; color: var(--muted); margin-top: 16px; cursor: pointer;
-      font-family: 'Space Grotesk', sans-serif; text-decoration: underline; font-size: 0.85rem;
-  }
-  
-  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-  .pix-waiting { animation: pulse 1.5s infinite; }
+/* signature element: osciloscópio de contraste */
+.scope{
+  background:var(--surface); border:1px solid var(--line); border-radius:6px;
+  padding:20px 22px; margin-bottom:24px;
+}
+.scope-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px;}
+.scope-label{font-family:'Space Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.1em; color:var(--paper-dim);}
+.scope-value{font-family:'Fragment Mono',monospace; font-size:22px; color:var(--ok);}
+.scope-track{position:relative; height:34px; background:var(--ink); border-radius:3px; overflow:hidden; border:1px solid var(--line);}
+.scope-fill{position:absolute; inset:0; width:78%; background:linear-gradient(90deg,var(--amber),var(--ok)); opacity:.85;}
+.scope-threshold{position:absolute; top:0; bottom:0; left:51%; width:1.5px; background:var(--paper);}
+.scope-threshold::after{
+  content:'MÍN 4.0'; position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+  font-family:'Space Mono',monospace; font-size:8.5px; color:var(--paper-dim); white-space:nowrap;
+}
+.scope-ticks{display:flex; justify-content:space-between; margin-top:6px;}
+.scope-ticks span{font-family:'Space Mono',monospace; font-size:9px; color:var(--paper-dim); opacity:.6;}
 
-  #tutorial-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(3px); z-index: 9000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-  #tutorial-overlay.active { opacity: 1; pointer-events: all; }
-  
-  #tutorial-dialog { position: fixed; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--accent); border-radius: 14px; padding: 20px; width: 90%; max-width: 400px; z-index: 9005; box-shadow: 0 10px 40px rgba(124,58,237,0.4); opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; gap: 12px; }
-  #tutorial-dialog.active { opacity: 1; pointer-events: all; transform: translateX(-50%) translateY(0); }
-  
-  .tut-header { display: flex; align-items: center; gap: 10px; }
-  .tut-icon { font-size: 1.5rem; }
-  #tut-title { font-size: 1.1rem; color: #fff; font-weight: 700; margin: 0;}
-  #tut-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.4; margin:0;}
-  .tut-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
-  #tut-progress { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--accent2); }
-  .btn-tut { background: linear-gradient(135deg, var(--accent2), #ec4899); border: none; color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem;}
-  
-  .tut-highlight { position: relative; z-index: 9002 !important; box-shadow: 0 0 0 4px var(--surface), 0 0 0 6px var(--accent2), 0 0 30px rgba(236,72,153,0.4) !important; border-radius: 12px; transition: all 0.3s; pointer-events: none;}
+/* card padrão refinado */
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:22px;
+}
+.field{margin-bottom:18px;}
+.field label{
+  display:block; font-family:'Space Mono',monospace; font-size:10.5px; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--paper-dim); margin-bottom:8px;
+}
+.field input{
+  width:100%; background:var(--ink); border:1px solid var(--line); border-radius:4px;
+  padding:11px 13px; color:var(--paper); font-family:'Inter',sans-serif; font-size:14px; outline:none;
+  transition:border-color .15s;
+}
+.field input:focus{border-color:var(--amber);}
 
-  footer{padding:16px;color:var(--muted);font-size:.68rem;font-family:'Space Mono',monospace;text-align:center}
+.field-value{font-style:normal; color:var(--amber); font-family:'Space Mono',monospace; float:right;}
+
+.select-fake{
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--ink); border:1px solid var(--line); border-radius:4px;
+  padding:11px 13px; font-size:14px; cursor:pointer; transition:border-color .15s;
+}
+.select-fake:hover{border-color:var(--line-bright);}
+.select-fake svg{width:16px; height:16px; color:var(--paper-dim);}
+
+.chip-row{display:flex; gap:7px; flex-wrap:wrap;}
+.chip{
+  background:var(--ink); border:1px solid var(--line); border-radius:5px; color:var(--paper-dim);
+  font-family:'Inter',sans-serif; font-size:12.5px; padding:8px 13px; cursor:pointer;
+  transition:all .15s;
+}
+.chip:hover{border-color:var(--line-bright); color:var(--paper);}
+.chip.is-active{
+  background:rgba(255,138,61,.12); border-color:var(--amber); color:var(--amber-light); font-weight:600;
+}
+
+.slider-fake{position:relative; height:5px; background:var(--line); border-radius:4px; margin-top:6px;}
+.slider-fake-fill{position:absolute; left:0; top:0; bottom:0; width:38%; background:var(--amber); border-radius:4px;}
+.slider-fake-thumb{
+  position:absolute; left:38%; top:50%; transform:translate(-50%,-50%);
+  width:16px; height:16px; border-radius:50%; background:var(--amber-light);
+  border:2px solid var(--ink); box-shadow:0 0 0 1px var(--amber);
+}
+
+.check-fake{
+  display:flex; align-items:center; gap:11px; background:var(--ink); border:1px solid var(--line);
+  border-radius:5px; padding:13px 14px; margin-bottom:20px; cursor:pointer; transition:border-color .15s;
+  font-size:13.5px;
+}
+.check-fake:hover{border-color:var(--line-bright);}
+.check-fake input{position:absolute; opacity:0; pointer-events:none;}
+.check-fake i{font-style:normal; color:var(--paper-dim); font-size:12px;}
+.check-box{
+  width:18px; height:18px; border-radius:4px; border:1.5px solid var(--amber); flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; background:rgba(255,138,61,.15);
+}
+.check-box svg{width:12px; height:12px; color:var(--amber);}
+
+/* botões liquid glass — translúcido, blur, borda de luz */
+.btn-row{display:flex; gap:10px; margin-top:8px;}
+.btn{
+  flex:1; position:relative; padding:13px 18px; border-radius:8px; cursor:pointer;
+  font-family:'Inter',sans-serif; font-size:13.5px; font-weight:600; text-align:center;
+  border:1px solid rgba(255,255,255,.08);
+  transition:transform .15s ease, border-color .15s ease;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+}
+.btn:active{transform:scale(.98);}
+
+.btn-glass{
+  background:linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.02));
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  color:var(--paper);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 8px 24px rgba(0,0,0,.35);
+}
+.btn-glass:hover{background:linear-gradient(160deg, rgba(255,255,255,.13), rgba(255,255,255,.04)); border-color:rgba(255,255,255,.2);}
+
+.btn-glass-amber{
+  background:linear-gradient(160deg, rgba(255,209,102,.20), rgba(255,138,61,.06));
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  color:var(--amber-light);
+  border:1px solid rgba(255,180,102,.28);
+  box-shadow:inset 0 1px 0 rgba(255,225,170,.3), 0 8px 28px rgba(255,138,61,.18);
+}
+.btn-glass-amber:hover{background:linear-gradient(160deg, rgba(255,209,102,.28), rgba(255,138,61,.10));}
+
+.icon{width:15px; height:15px; flex-shrink:0;}
+
+.swatches{display:flex; gap:18px; margin-top:36px; flex-wrap:wrap;}
+.swatch{display:flex; align-items:center; gap:8px;}
+.swatch i{width:16px; height:16px; border-radius:3px; display:block; border:1px solid rgba(255,255,255,.1);}
+.swatch span{font-family:'Space Mono',monospace; font-size:10px; color:var(--paper-dim);}
+
+.note{
+  margin-top:40px; padding:16px 18px; border-left:2px solid var(--amber); background:var(--surface);
+  font-family:'Space Mono',monospace; font-size:11.5px; color:var(--paper-dim); line-height:1.6;
+}
 </style>
-
-<!-- SCRIPTS OFICIAIS DO SDK DO FIREBASE (V8 COMPAT) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body>
+<div class="wrap">
 
-<header>
-  <div class="logo">
-    <img src="LogoQRforma.png" alt="Logo QRforma" style="height: 52px; width: auto; border-radius: 8px; object-fit: contain;">
+  <div class="ruler">
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
   </div>
-  
-  <div class="header-user-zone">
-    <button class="btn-google-login" id="btn-login-google">
-      <svg style="width:16px; height:16px" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.53-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-8.82z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.74-2.11-6.68-4.96H1.21v3.15C3.18 21.88 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.32 14.24A7.16 7.16 0 0 1 4.91 12c0-.79.13-1.57.41-2.24V6.61H1.21A11.94 11.94 0 0 0 0 12c0 1.92.45 3.74 1.21 5.39l4.11-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.18 2.12 1.21 5.39l4.11 3.15c.94-2.85 3.57-4.96 6.68-4.96z"/></svg>
-      Entrar com Google
-    </button>
-    <div class="user-logged-box" id="user-logged-box" style="display:none;">
-      <span class="badge" id="pro-badge" style="display:none; border-color:#ec4899; color:#ec4899;">👑 PRO</span>
-      <span id="user-email-display"></span>
-      <button class="btn-logout" id="btn-logout-google">Sair</button>
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">Q</div>
+      <div class="brand-name">QR<b>forma</b></div>
+    </div>
+    <div class="tag">v2 · optical lab</div>
+  </header>
+
+  <h1>QR codes que carregam <em>sua marca</em>, não só o link.</h1>
+  <p class="lede">Cor, logo e movimento calibrados automaticamente para manter contraste de leitura — sem comprometer a identidade visual.</p>
+
+  <div class="scope">
+    <div class="scope-head">
+      <span class="scope-label">Contraste de leitura</span>
+      <span class="scope-value">6.2:1</span>
+    </div>
+    <div class="scope-track">
+      <div class="scope-threshold"></div>
+      <div class="scope-fill"></div>
+    </div>
+    <div class="scope-ticks">
+      <span>1.0</span><span>2.0</span><span>3.0</span><span>4.0</span><span>5.0</span><span>6.0</span><span>7.0</span><span>8.0</span>
     </div>
   </div>
-</header>
 
-<div class="hero">
-  <h1>Transforme seus QR Codes<br>em algo <em>surpreendente</em></h1>
-  <p>Conecte sua marca ao cliente com transições fluidas de Motion Design a 60 FPS. Escolha tons livremente no gradiente com resposta em <strong>tempo real</strong>.</p>
-</div>
-
-<div class="card">
-  <label class="fl">Destino do QR code</label>
-  <input type="url" id="qr-url" placeholder="https://q-rforma-app.vercel.app/" value="https://q-rforma-app.vercel.app/"/>
-
-  <label class="fl">Logo da marca</label>
-  <div id="drop-zone">
-    <input type="file" id="logo-input" accept="image/*"/>
-    <div class="uico">🖼</div>
-    <p><strong>Clique para escolher</strong> sua logo<br><span style="font-size:.76rem">PNG transparente recomendado</span></p>
-  </div>
-  <div id="logo-preview-wrap">
-    <img id="preview-thumb" alt=""/>
-    <span id="logo-status"></span>
-    <button id="btn-clear">✕ remover</button>
-  </div>
-
-  <label class="fl">Posição da Logo (Animação)</label>
-  <select id="logo-style" class="custom-select">
-    <option value="center">🎯 Emblema Central (Encolhe p/ o Meio)</option>
-    <option value="background">👻 Marca d'água (Misturada ao Fundo)</option>
-    <option value="particles">✨ Poeira Mágica (Partículas ao Redor da Logo)</option>
-  </select>
-
-  <label class="fl">Estilo dos Pontinhos (Módulos)</label>
-  <select id="qr-style" class="custom-select">
-    <option value="organic">🦠 Orgânico (Conectado / Líquido)</option>
-    <option value="circle">● Círculos Clássicos</option>
-    <option value="classic">⬛ Quadrados (Padrão Raiz)</option>
-    <option value="square">■ Quadrados Modernos</option>
-    <option value="fluid">💧 Gotas Fluidas</option>
-    <option value="diamond">✦ Diamantes Geométricos</option>
-    <option value="hexagon">⬡ Hexagonal (Tech)</option>
-  </select>
-
-  <div class="color-picking-zone" id="tut-target-colors">
-    <div class="color-header-actions" style="margin-bottom: 4px;">
-      <span class="fl" style="margin-bottom:0; width:100%; display:flex; justify-content:space-between; align-items:center;">
-        <span>Cores Padrão e Espectro Livre</span>
-        <span id="color-hex-label" style="color:var(--accent2); font-weight:700; font-size:0.75rem;">#FFFFFF</span>
-      </span>
+  <div class="card">
+    <div class="field">
+      <label>Destino do QR</label>
+      <input type="text" value="https://q-rforma-app.vercel.app/" />
     </div>
-    
-    <div class="palette-layout">
-      <div id="palette-swatches"></div>
-      <div class="spectrum-container" title="Arraste para escolher a cor instantaneamente">
-        <input type="range" id="spectrum-slider" min="0" max="360" value="265">
+
+    <div class="field">
+      <label>Animação da logo</label>
+      <div class="select-fake">
+        <span>Emblema central — encolhe ao meio</span>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
     </div>
-  </div>
 
-  <!-- A label e os valores deste slider mudam via JS baseado na escolha -->
-  <label class="fl" id="slider-label">Tamanho da Logo no Centro (Máx 24%)</label>
-  <div class="slider-row" id="tut-target-slider">
-    <input type="range" id="sl-logo" min="15" max="24" value="22"/>
-    <span class="slider-val" id="sl-logo-v">22%</span>
-  </div>
-
-  <label class="check-row" for="chk-light-sweep" style="display:flex; align-items:center; gap:9px; background:var(--bg); border:1px solid var(--border); border-radius:9px; padding:11px 13px; margin-bottom:20px; cursor:pointer; transition:border-color .2s;">
-    <input type="checkbox" id="chk-light-sweep" style="width:17px; height:17px; accent-color:var(--accent2); cursor:pointer; flex-shrink:0;"/>
-    <span style="font-size:.86rem;">💫 Efeito Revelação por Luz <span style="color:var(--muted); font-size:.76rem;">(varredura de brilho sobre o QR)</span></span>
-  </label>
-
-  <hr class="divider"/>
-  
-  <div id="verify-log"></div>
-  
-  <div class="result-meta">
-    <span>Status do Scanner: <strong id="final-conf">—</strong></span>
-    <span style="font-size:0.65rem; padding:2px 6px; background:var(--info-bg); color:var(--info-text); border-radius:4px;">MOTION ATIVO (15s | 60FPS)</span>
-  </div>
-  
-  <div class="qr-container">
-    <div id="live-overlay">
-      <div class="spin" style="width:24px;height:24px;"></div>
-      Processando Design...
-    </div>
-    
-    <div id="lock-overlay">
-      <div class="lock-icon">🔒</div>
-      <h3>Teste Grátis Esgotado</h3>
-      <p>Você atingiu o limite de 3 arquivos visuais.<br>Libere a versão PRO para uso ilimitado.</p>
-      <button class="btn-unlock-small" onclick="triggerPaywallFlow()">Desbloquear Agora</button>
+    <div class="field">
+      <label>Estilo dos módulos</label>
+      <div class="chip-row">
+        <button class="chip is-active">Orgânico</button>
+        <button class="chip">Círculos</button>
+        <button class="chip">Hexagonal</button>
+        <button class="chip">Diamante</button>
+      </div>
     </div>
 
-    <canvas id="qr-canvas"></canvas>
-  </div>
-  
-  <div id="loader-video">
-    <div class="spin"></div>
-    <span id="loader-msg" style="text-align:center">Renderizando Vídeo HD...</span>
+    <div class="field">
+      <label>Tamanho da logo <i class="field-value">22%</i></label>
+      <div class="slider-fake"><div class="slider-fake-fill"></div><div class="slider-fake-thumb"></div></div>
+    </div>
+
+    <label class="check-fake">
+      <input type="checkbox" checked/>
+      <span class="check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+      <span>Revelação por luz <i>— varredura de brilho sobre o QR</i></span>
+    </label>
+
+    <div class="btn-row">
+      <button class="btn btn-glass">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Tela digital
+      </button>
+      <button class="btn btn-glass-amber">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        Exportar vídeo
+      </button>
+    </div>
   </div>
 
-  <div class="actions" id="download-actions">
-    <div class="actions-row">
-      <button class="btn-sec btn-dl-digital" id="btn-png-digital">⬇ Tela Digital (Grátis)</button>
-      <button class="btn-sec btn-pro" id="btn-png-print">🔒 Impressão (PRO)</button>
-    </div>
-    <button class="btn-sec btn-pro btn-dl-video" id="btn-dl-video">🎬 Baixar Vídeo Full HD 60FPS (PRO)</button>
+  <div class="swatches">
+    <div class="swatch"><i style="background:#0c0d0a"></i><span>#0C0D0A ink</span></div>
+    <div class="swatch"><i style="background:#171913"></i><span>#171913 surface</span></div>
+    <div class="swatch"><i style="background:#2a2d22"></i><span>#2A2D22 line</span></div>
+    <div class="swatch"><i style="background:#ff8a3d"></i><span>#FF8A3D amber</span></div>
+    <div class="swatch"><i style="background:#ffd166"></i><span>#FFD166 amber light</span></div>
+    <div class="swatch"><i style="background:#f5f3ea"></i><span>#F5F3EA paper</span></div>
   </div>
+
+  <p class="note">
+    DIREÇÃO "OPTICAL LAB" — paleta âmbar/grafite referencia a luz de leitura de scanners óticos reais (não roxo-rosa genérico de IA). Tipografia Fragment Mono para títulos (caráter de instrumento técnico) + Inter no corpo. O "osciloscópio de contraste" acima é o elemento-assinatura: mostra o contraste REAL calculado pelo app (contrast()), não decoração. Botões em estilo Liquid Glass (blur + transparência + borda de luz).
+  </p>
+
 </div>
-
-<footer>QRforma · Sistema Autenticado · v61.1</footer>
-
-<!-- MODAL DE PAYWALL PIX DINÂMICO -->
-<div class="paywall-modal" id="paywall-modal">
-    <div class="paywall-card">
-        <div class="pw-icon">🚀</div>
-        <h2 class="pw-title">Desbloqueie o Potencial Máximo</h2>
-        <p class="pw-desc">A versão básica é grátis, mas arquivos em alta definição e animações são recursos exclusivos da versão <strong>PRO</strong>.</p>
-        
-        <ul class="pw-features">
-            <li>✅ Downloads ilimitados (Acesso Grátis esgotado)</li>
-            <li>✅ <strong>Vídeos Fluidos 60FPS</strong> para Telões e Instagram</li>
-            <li>✅ <strong>Arquivos para Impressão</strong> de alta qualidade</li>
-        </ul>
-
-        <button class="btn-buy" id="btn-gerar-pix">Gerar PIX para Liberar (R$ 19,90)</button>
-        
-        <div id="area-pix" style="display:none; margin-top:15px; padding-top:15px; border-top:1px solid var(--border);">
-            <canvas id="canvas-qr-pix" style="width:100%; max-width:180px; aspect-ratio: 1/1; border-radius:10px; margin-bottom:10px; border: 2px solid var(--accent); display: block; margin: 0 auto;"></canvas>
-            <input type="text" id="input-copia-cola" readonly value="" style="width:100%; padding:10px; font-size:0.7rem; border-radius:6px; border:1px solid var(--accent); background:var(--bg); color:var(--text); cursor:pointer; text-align:center;" title="Clique para copiar" onclick="this.select(); document.execCommand('copy'); alert('Código PIX Copiado!');" />
-            <p class="pix-waiting" style="font-size:0.8rem; color:var(--ok-text); margin-top:10px;">⏳ Aguardando pagamento... <br>A tela será liberada automaticamente.</p>
-        </div>
-        
-        <button class="btn-close-modal" onclick="document.getElementById('paywall-modal').classList.remove('active')">Voltar</button>
-    </div>
-</div>
-
-<!-- ESTRUTURAS DO TUTORIAL (ONBOARDING) -->
-<div id="tutorial-overlay"></div>
-<div id="tutorial-dialog">
-    <div class="tut-header">
-        <span class="tut-icon">✨</span>
-        <h3 id="tut-title">Bem-vindo ao QRforma</h3>
-    </div>
-    <p id="tut-desc">Vamos criar o seu primeiro QR Code animado em 5 passos rápidos.</p>
-    <div class="tut-footer">
-        <span id="tut-progress">Introdução</span>
-        <button class="btn-tut" id="btn-tut-next">Começar</button>
-    </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-
-<script>
-// --- CONFIGURAÇÃO OFICIAL DO SEU FIREBASE (qrforma-31471) ---
-const firebaseConfig = {
-  apiKey: "AIzaSyCvoqjWxpYPwJV26p9DyJAy1ziQashw8Ug",
-  authDomain: "qrforma-31471.firebaseapp.com",
-  projectId: "qrforma-31471",
-  storageBucket: "qrforma-31471.firebasestorage.app",
-  messagingSenderId: "1061901922718",
-  appId: "1:1061901922718:web:340ff68eb023ef4148668f",
-  measurementId: "G-E611VVLDWD"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-
-// --- ESTADO GLOBAL DE AUTENTICAÇÃO E PERMISSÃO ---
-let currentUserToken = null;
-let currentUserEmail = null;
-let isPremiumUser = false;
-let checkInterval = null;
-
-document.getElementById('btn-login-google').addEventListener('click', () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('email');
-    auth.signInWithPopup(provider).catch(err => {
-        console.error("Erro no login: ", err);
-        alert("Aconteceu um erro ao abrir o login do Google. Tente novamente.");
-    });
-});
-
-document.getElementById('btn-logout-google').addEventListener('click', () => {
-    auth.signOut().then(() => {
-        localStorage.removeItem('qrforma_free_downloads');
-        window.location.reload();
-    });
-});
-
-auth.onAuthStateChanged(async (user) => {
-    const loginBtn = document.getElementById('btn-google-login');
-    const loggedBox = document.getElementById('user-logged-box');
-    const emailDisplay = document.getElementById('user-email-display');
-    
-    const activeLoginBtn = loginBtn || document.getElementById('btn-login-google');
-    
-    if (user) {
-        currentUserEmail = user.email;
-        currentUserToken = await user.getIdToken(true); 
-        
-        if(emailDisplay) emailDisplay.innerText = user.email;
-        if(activeLoginBtn) activeLoginBtn.style.display = 'none';
-        if(loggedBox) loggedBox.style.display = 'flex';
-        
-        await verifyExistingAccess();
-    } else {
-        currentUserToken = null;
-        currentUserEmail = null;
-        isPremiumUser = false;
-        
-        if(activeLoginBtn) activeLoginBtn.style.display = 'flex';
-        if(loggedBox) loggedBox.style.display = 'none';
-        if(document.getElementById('pro-badge')) document.getElementById('pro-badge').style.display = 'none';
-        
-        applyBlurIfLimitReached();
-    }
-});
-
-// --- LISTA VIP CHAVE MESTRA IMPLEMENTADA ---
-async function verifyExistingAccess() {
-    if (!currentUserToken) return;
-
-    const emailsVIP = [
-        "qrforma@gmail.com"
-    ];
-
-    if (emailsVIP.includes(currentUserEmail)) {
-        unlockProFeatures(); 
-        return; 
-    }
-
-    try {
-        const checkRes = await fetch(`/api/checar-pagamento`, {
-            headers: { 'Authorization': `Bearer ${currentUserToken}` }
-        });
-        const checkData = await checkRes.json();
-        if (checkData.status === "pago") { 
-            unlockProFeatures(); 
-        } else {
-            applyBlurIfLimitReached();
-        }
-    } catch(e) { applyBlurIfLimitReached(); }
-}
-
-function unlockProFeatures() {
-    isPremiumUser = true;
-    if(document.getElementById('pro-badge')) document.getElementById('pro-badge').style.display = 'flex';
-    if(document.getElementById('lock-overlay')) document.getElementById('lock-overlay').classList.remove('active');
-    
-    // ATUALIZAÇÃO AJUSTE FINO: Mudança para nomenclatura "Impressão (Ilimitado)"
-    let btnPrint = document.getElementById('btn-png-print');
-    if(btnPrint) {
-        btnPrint.innerHTML = '⬇ Impressão (Ilimitado)';
-        btnPrint.classList.remove('btn-pro');
-        btnPrint.classList.add('btn-dl-print');
-    }
-    
-    let btnVideo = document.getElementById('btn-dl-video');
-    if(btnVideo) {
-        btnVideo.innerHTML = '🎬 Baixar Vídeo Full HD 60FPS (Ilimitado)';
-        btnVideo.classList.remove('btn-pro');
-    }
-    
-    let btnDigital = document.getElementById('btn-png-digital');
-    if(btnDigital) {
-        btnDigital.classList.remove('locked');
-        btnDigital.innerHTML = '⬇ Tela Digital (Ilimitado)';
-    }
-    
-    if(document.getElementById('paywall-modal')) document.getElementById('paywall-modal').classList.remove('active');
-    if (checkInterval) clearInterval(checkInterval);
-}
-
-function triggerPaywallFlow() {
-    if (!auth.currentUser) {
-        alert("Por favor, faça login com o Google no topo da página antes de assinar a versão PRO.");
-        return;
-    }
-    if(document.getElementById('paywall-modal')) document.getElementById('paywall-modal').classList.add('active');
-}
-
-document.getElementById('btn-gerar-pix').addEventListener('click', async function() {
-    if (!currentUserToken) {
-        alert("Você precisa estar logado para processar o pagamento.");
-        return;
-    }
-    var btn = this;
-    btn.innerText = "⏳ Gerando PIX seguro...";
-    btn.disabled = true;
-
-    try {
-        const res = await fetch('/api/gerar-pix', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${currentUserToken}`
-            }
-        });
-        
-        if (!res.ok) throw new Error("Falha ao se comunicar com o servidor");
-        const pixData = await res.json();
-
-        document.getElementById('input-copia-cola').value = pixData.qr_code;
-        animatePixQR(pixData.qr_code); 
-        
-        btn.style.display = 'none';
-        document.getElementById('area-pix').style.display = 'block';
-
-        checkInterval = setInterval(async () => {
-            try {
-                const checkRes = await fetch(`/api/checar-pagamento`, {
-                    headers: { 'Authorization': `Bearer ${currentUserToken}` }
-                });
-                const checkData = await checkRes.json();
-                
-                if (checkData.status === "pago") {
-                    clearInterval(checkInterval);
-                    unlockProFeatures();
-                    alert("✅ Pagamento aprovado! O QRforma Pro foi desbloqueado com sucesso.");
-                }
-            } catch (err) { }
-        }, 4000);
-
-    } catch (e) {
-        alert("Ocorreu um erro ao gerar o pagamento. Tente novamente mais tarde.");
-        btn.innerText = "Gerar PIX para Liberar (R$ 19,90)";
-        btn.disabled = false;
-    }
-});
-
-
-// --- SISTEMA DE ONBOARDING (TUTORIAL) ---
-const tutorialSteps = [
-    { target: 'qr-url', title: '🔗 Destino do QR Code', desc: 'Cole aqui o link para onde o seu cliente vai ao escanear (ex: Instagram, Cardápio, WhatsApp).' },
-    { target: 'drop-zone', title: '🖼️ Identidade Visual', desc: 'Suba a logo da sua marca clicando aqui. Imagens com fundo transparente dão o melhor resultado.' },
-    { target: 'tut-target-colors', title: '🎨 Estilos e Cores', desc: 'Deixe com a sua cara! Arraste essa barra para pintar o QR Code inteiro com as cores da sua marca.' },
-    { target: 'tut-target-slider', title: '🎚️ Ajuste Fino', desc: 'Controle o tamanho ou a mistura da logo com o fundo para garantir que o sensor da câmera consiga ler o código.' },
-    { target: 'download-actions', title: '🚀 Tudo Pronto!', desc: 'Baixe as telas digitais ou libere a versão PRO para exportar vídeos animados em 60FPS para suas redes.' }
-];
-
-let currentTutStep = -1;
-
-function showTutorialStep(stepIndex) {
-    document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
-    const dialog = document.getElementById('tutorial-dialog');
-    
-    if (stepIndex >= tutorialSteps.length) {
-        if(document.getElementById('tutorial-overlay')) document.getElementById('tutorial-overlay').classList.remove('active');
-        if(dialog) dialog.classList.remove('active');
-        localStorage.setItem('qrforma_tutorial_done', 'true');
-        if(dialog) { dialog.style.top = ''; dialog.style.bottom = ''; }
-        return;
-    }
-
-    const step = tutorialSteps[stepIndex];
-    const targetEl = document.getElementById(step.target);
-    
-    if (targetEl) {
-        targetEl.classList.add('tut-highlight');
-        if (step.target === 'download-actions') {
-            if(dialog) { dialog.style.bottom = 'auto'; dialog.style.top = '30px'; }
-            targetEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        } else {
-            if(dialog) { dialog.style.top = 'auto'; dialog.style.bottom = '30px'; }
-            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-
-    if(document.getElementById('tut-title')) document.getElementById('tut-title').innerText = step.title;
-    if(document.getElementById('tut-desc')) document.getElementById('tut-desc').innerText = step.desc;
-    if(document.getElementById('tut-progress')) document.getElementById('tut-progress').innerText = `Passo ${stepIndex + 1} de ${tutorialSteps.length}`;
-    if(document.getElementById('btn-tut-next')) document.getElementById('btn-tut-next').innerText = stepIndex === tutorialSteps.length - 1 ? 'Concluir' : 'Próximo';
-}
-
-document.getElementById('btn-tut-next').addEventListener('click', () => {
-    currentTutStep++;
-    showTutorialStep(currentTutStep);
-});
-
-window.addEventListener('load', () => {
-    if (!localStorage.getItem('qrforma_tutorial_done')) {
-        setTimeout(() => {
-            if(document.getElementById('tutorial-overlay')) document.getElementById('tutorial-overlay').classList.add('active');
-            if(document.getElementById('tutorial-dialog')) {
-                document.getElementById('tutorial-dialog').style.bottom = '30px';
-                document.getElementById('tutorial-dialog').classList.add('active');
-            }
-        }, 800); 
-    }
-});
-
-
-// --- ENGINE DE RENDERIZAÇÃO VISUAL ---
-function applyBlurIfLimitReached() {
-    if (isPremiumUser) {
-        if(document.getElementById('lock-overlay')) document.getElementById('lock-overlay').classList.remove('active');
-        return false;
-    }
-    let freeDownloads = parseInt(localStorage.getItem('qrforma_free_downloads') || '0');
-    if (freeDownloads >= 3) {
-        if(document.getElementById('lock-overlay')) document.getElementById('lock-overlay').classList.add('active');
-        let btnDigital = document.getElementById('btn-png-digital');
-        if(btnDigital) {
-            btnDigital.classList.add('locked');
-            btnDigital.innerHTML = '🔒 Grátis Esgotado';
-        }
-        return true;
-    }
-    return false;
-}
-
-var logoImg = null;
-var palette = [[15, 15, 15], [242, 242, 242]]; 
-var selPalIdx = -1; 
-var currentActiveColor = [124, 58, 237]; 
-var animRequest = null;
-var animStartTime = 0;
-var layerForeground = null; 
-var layerDigitalMerged = null;
-var liveUpdateTimer = null; 
-var qrMetaCache = null;
-var particleCache = null;
-var TOTAL_ANIMATION_DURATION = 15000; // duração do loop principal do motion (ms) — era 10000
-
-function updateColorUI(rgbArray) {
-    var hex = rgbToHex(rgbArray[0], rgbArray[1], rgbArray[2]).toUpperCase();
-    document.documentElement.style.setProperty('--thumb-color', hex);
-    if(document.getElementById('color-hex-label')) {
-        document.getElementById('color-hex-label').textContent = hex;
-        document.getElementById('color-hex-label').style.color = hex;
-    }
-}
-
-var spectrumSlider = document.getElementById('spectrum-slider');
-if(spectrumSlider) {
-    spectrumSlider.addEventListener('input', function() {
-      selPalIdx = -1;
-      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('sel'));
-      var hue = parseInt(this.value) / 360;
-      currentActiveColor = hslToRgb(hue, 0.85, 0.45); 
-      updateColorUI(currentActiveColor);
-      triggerLiveUpdate();
-    });
-}
-
-document.getElementById('logo-style').addEventListener('change', function() {
-    var val = this.value;
-    var sl = document.getElementById('sl-logo');
-    
-    if(val === 'center') {
-        document.getElementById('slider-label').innerText = 'Tamanho da Logo no Centro (Máx 24%)';
-        sl.min = 15; sl.max = 24; sl.value = 22;
-    } else if(val === 'particles') {
-        document.getElementById('slider-label').innerText = 'Densidade de Partículas';
-        sl.min = 30; sl.max = 100; sl.value = 70;
-    } else {
-        document.getElementById('slider-label').innerText = 'Opacidade da Logo ao Fundo (Ajuste Fino)';
-        sl.min = 5; sl.max = 80; sl.value = 40;
-    }
-    document.getElementById('sl-logo-v').textContent = sl.value + '%';
-    triggerLiveUpdate();
-});
-
-document.getElementById('sl-logo').addEventListener('input', function(){
-  document.getElementById('sl-logo-v').textContent = this.value + '%';
-  triggerLiveUpdate();
-});
-
-function rr(v){ return Math.round(v); }
-function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
-function easeInOutCubic(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
-function hslToRgb(h, s, l) {
-    var r, g, b;
-    if (s == 0) { r = g = b = l; } 
-    else {
-        var hue2rgb = function hue2rgb(p, q, t) {
-            if (t < 0) t += 1; if (t > 1) t -= 1;
-            if (t < 1/6) return p + (q - p) * 6 * t;
-            if (t < 1/2) return q;
-            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-            return p;
-        }
-        var q = l < 0.5 ? l * (1 + s) : l + s - l * s; var p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3);
-    }
-    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-}
-
-function lum(c){ return c.reduce((acc,v,i) => { v /= 255; v = v <= .03928 ? v/12.92 : Math.pow((v+.055)/1.055, 2.4); return acc + v * [.2126,.7152,.0722][i]; }, 0); }
-function contrast(a, b){ var la = lum(a), lb = lum(b); return (Math.max(la,lb) + .05) / (Math.min(la,lb) + .05); }
-
-function ensureContrast(col, bg){
-  var c = col.slice(); var bgLum = lum(bg); var isBgDark = bgLum < 0.5; 
-  for (var i = 0; i < 80; i++){
-    if (contrast(c, bg) >= 4.0) return c;
-    if (isBgDark) { c = [c[0] + (255-c[0])*0.15, c[1] + (255-c[1])*0.15, c[2] + (255-c[2])*0.15]; } 
-    else { c = [c[0]*.85, c[1]*.85, c[2]*.85]; }
-  }
-  return isBgDark ? [255,255,255] : [10,10,10];
-}
-
-function rgbToHex(r, g, b) { return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
-function hexToRgb(hex) {
-  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [124,58,237];
-}
-
-function loadLogo(src, name){
-  var img = new Image();
-  img.crossOrigin = "Anonymous"; 
-  img.onload = function(){
-    logoImg = img;
-    if(document.getElementById('preview-thumb')) document.getElementById('preview-thumb').src = src;
-    if(document.getElementById('logo-status')) document.getElementById('logo-status').textContent = '✓ ' + name;
-    if(document.getElementById('logo-preview-wrap')) document.getElementById('logo-preview-wrap').style.display = 'flex';
-    triggerLiveUpdate(); 
-  };
-  img.src = src;
-}
-
-window.addEventListener('load', () => {
-    renderPalette();
-    currentActiveColor = palette[0];
-    updateColorUI(currentActiveColor);
-    loadLogo('LogoQRforma.png', 'Logo Oficial');
-});
-
-document.getElementById('logo-input').addEventListener('change', function(e){
-  var f = e.target.files[0]; if (!f) return;
-  var r = new FileReader(); r.onload = ev => loadLogo(ev.target.result, f.name); r.readAsDataURL(f);
-});
-document.getElementById('btn-clear').addEventListener('click', function(){
-  logoImg = null; document.getElementById('logo-input').value = '';
-  document.getElementById('logo-preview-wrap').style.display = 'none'; triggerLiveUpdate();
-});
-
-function renderPalette(){
-  var cont = document.getElementById('palette-swatches'); if(!cont) return; cont.innerHTML = '';
-  palette.forEach((c, i) => {
-    var sw = document.createElement('div'); sw.className = 'swatch' + (i === selPalIdx ? ' sel' : '');
-    sw.style.background = `rgb(${rr(c[0])},${rr(c[1])},${rr(c[2])})`;
-    if (i === 0) sw.style.border = "1px solid rgba(255, 255, 255, 0.15)"; 
-    if (i === 1) sw.style.border = "1px solid #444"; 
-
-    sw.addEventListener('click', () => { 
-      selPalIdx = i; currentActiveColor = palette[i];
-      document.querySelectorAll('.swatch').forEach((s,j) => s.classList.toggle('sel', j === i)); 
-      updateColorUI(currentActiveColor); triggerLiveUpdate(); 
-    });
-    cont.appendChild(sw);
-  });
-}
-
-// --- INTEGRAÇÃO DO DESIGN MÓDULO ORGÂNICO / LÍQUIDO ---
-function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
-  var r = size / 2, cx = x + r, cy = y + r, d = size - (pad * 2);
-  ctx.beginPath();
-  if (type === 'circle') { 
-      ctx.arc(cx, cy, (size/2) - pad, 0, Math.PI * 2); ctx.fill(); 
-  } else if (type === 'square' || type === 'classic') { 
-      ctx.fillRect(x + pad, y + pad, d, d); 
-  } else if (type === 'fluid') {
-      ctx.moveTo(cx, y + pad); ctx.arcTo(x + size - pad, y + pad, x + size - pad, y + size - pad, r - pad);
-      ctx.lineTo(cx, y + size - pad); ctx.arcTo(x + pad, y + size - pad, x + pad, y + pad, r - pad); ctx.closePath(); ctx.fill();
-  } else if (type === 'diamond') {
-      ctx.moveTo(cx, y + pad); ctx.lineTo(x + size - pad, cy); ctx.lineTo(cx, y + size - pad); ctx.lineTo(x + pad, cy); ctx.closePath(); ctx.fill();
-  } else if (type === 'organic') {
-      ctx.arc(cx, cy, r - pad, 0, Math.PI * 2); ctx.fill();
-      if (hasRight) { ctx.fillRect(cx, y + pad, size, d); }
-      if (hasBottom) { ctx.fillRect(x + pad, cy, d, size); }
-  } else if (type === 'hexagon') {
-      var hr = r - pad; var rounding = hr * 0.18; // raio de arredondamento dos vértices
-      var verts = [];
-      for (var hi = 0; hi < 6; hi++) {
-          // hexágono "flat-top": começa em -90° (topo) e gira a cada 60°
-          var ang = (Math.PI / 180) * (60 * hi - 90);
-          verts.push([cx + hr * Math.cos(ang), cy + hr * Math.sin(ang)]);
-      }
-      for (var hi = 0; hi < 6; hi++) {
-          var p0 = verts[hi], p1 = verts[(hi + 1) % 6];
-          if (hi === 0) {
-              var midX = (verts[5][0] + p0[0]) / 2, midY = (verts[5][1] + p0[1]) / 2;
-              ctx.moveTo(midX, midY);
-          }
-          ctx.arcTo(p0[0], p0[1], p1[0], p1[1], rounding);
-      }
-      ctx.closePath(); ctx.fill();
-  }
-}
-
-// --- INTEGRAÇÃO DOS FINDERS PREMIUM COM ANEL REDONDO E DIAMANTE ---
-function drawFinders(ctx, n, cell, col, offset, isForScan, canvasBgColor, styleType){
-  var bgRgb = hexToRgb(canvasBgColor); var fcArray = ensureContrast(col.slice(), bgRgb);
-  var fc = `rgb(${rr(fcArray[0])},${rr(fcArray[1])},${rr(fcArray[2])})`;
-
-  [{tr:0,tc:0},{tr:0,tc:n-7},{tr:n-7,tc:0}].forEach(fp => {
-    var x0 = (fp.tc * cell) + offset, y0 = (fp.tr * cell) + offset, s7 = cell * 7, padW = cell * 0.05; 
-    
-    if (styleType === 'organic' && !isForScan) {
-        var cx = x0 + (s7/2), cy = y0 + (s7/2);
-        var rOut = s7/2, rMid = (cell*5)/2, rIn = (cell*3)/2;
-        
-        ctx.fillStyle = canvasBgColor; ctx.beginPath();
-        ctx.fillRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2));
-
-        ctx.fillStyle = fc; ctx.beginPath();
-        ctx.arc(cx, cy, rOut, 0, Math.PI * 2); ctx.fill();
-
-        ctx.fillStyle = canvasBgColor; ctx.beginPath();
-        ctx.arc(cx, cy, rMid, 0, Math.PI * 2); ctx.fill();
-
-        ctx.fillStyle = fc; ctx.beginPath();
-        ctx.moveTo(cx, cy - rIn); ctx.lineTo(cx + rIn, cy); ctx.lineTo(cx, cy + rIn); ctx.lineTo(cx - rIn, cy); ctx.closePath(); ctx.fill();
-    } else {
-        ctx.fillStyle = canvasBgColor; ctx.beginPath(); 
-        if (isForScan) ctx.fillRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2)); else ctx.roundRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2), cell * 0.8); ctx.fill();
-        var rOut = isForScan ? 0 : cell * 0.8, rMid = isForScan ? 0 : cell * 0.5, rIn = isForScan ? 0 : cell * 0.3;
-        ctx.fillStyle = fc; ctx.beginPath(); 
-        if (isForScan) ctx.fillRect(x0, y0, s7, s7); else ctx.roundRect(x0, y0, s7, s7, rOut); ctx.fill();
-        ctx.fillStyle = canvasBgColor; ctx.beginPath(); 
-        if (isForScan) ctx.fillRect(x0+cell, y0+cell, cell*5, cell*5); else ctx.roundRect(x0+cell, y0+cell, cell*5, cell*5, rMid); ctx.fill();
-        ctx.fillStyle = fc; ctx.beginPath(); 
-        if (isForScan) ctx.fillRect(x0+cell*2, y0+cell*2, cell*3, cell*3); else ctx.roundRect(x0+cell*2, y0+cell*2, cell*3, cell*3, rIn); ctx.fill();
-    }
-  });
-}
-
-function drawLogoContained(ctx, img, x, y, w, h) {
-    if (!img) return; var ratio = img.width / img.height; var dw = w, dh = h;
-    if (ratio > 1) { dh = w / ratio; y += (h - dh)/2; } else { dw = h * ratio; x += (w - dw)/2; }
-    ctx.drawImage(img, x, y, dw, dh);
-}
-
-async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMode, quietZoneMultiplier, isForScan = false, coreSize = 800, ecl = QRCode.CorrectLevel.H){
-    var tmp = document.createElement('div'); tmp.style.display = 'none'; document.body.appendChild(tmp);
-    try {
-      var qrCodeObj = new QRCode(tmp, { text: url, correctLevel: ecl });
-      await new Promise(r => setTimeout(r, 15)); 
-      var oQR = qrCodeObj._oQRCode;
-      if (!oQR) throw new Error("A matriz não pôde ser gerada.");
-
-      var mc = oQR.moduleCount; var cell = coreSize / mc; 
-      var QUIET_ZONE = Math.ceil(cell * quietZoneMultiplier); var TOTAL_SIZE = coreSize + (QUIET_ZONE * 2);
-      var isLightModule = lum(baseCol) > 0.5; var canvasBgColor = isLightModule ? '#13131a' : '#ffffff';
-
-      var cvsFG = document.createElement('canvas'); cvsFG.width = TOTAL_SIZE; cvsFG.height = TOTAL_SIZE;
-      var ctxFG = cvsFG.getContext('2d'); if (!ctxFG) throw new Error("Memória insuficiente.");
-      ctxFG.clearRect(0, 0, TOTAL_SIZE, TOTAL_SIZE); 
-
-      var pad = isForScan || styleType === 'classic' ? 0 : cell * 0.08; 
-      var actualStyle = isForScan ? 'square' : styleType;
-      
-      for (var row = 0; row < mc; row++){
-        for (var col = 0; col < mc; col++){
-          if (!oQR.isDark(row, col)) continue; 
-          if ((row < 7 && col < 7) || (row < 7 && col >= mc-7) || (row >= mc-7 && col < 7)) continue;
-          var x = (col * cell) + QUIET_ZONE, y = (row * cell) + QUIET_ZONE;
-          ctxFG.fillStyle = `rgb(${rr(baseCol[0])},${rr(baseCol[1])},${rr(baseCol[2])})`;
-          
-          var hasRight = false, hasBottom = false;
-          if (actualStyle === 'organic') {
-             var inF = (r, c) => ((r < 7 && c < 7) || (r < 7 && c >= mc-7) || (r >= mc-7 && c < 7));
-             hasRight = (col + 1 < mc) && oQR.isDark(row, col + 1) && !inF(row, col + 1);
-             hasBottom = (row + 1 < mc) && oQR.isDark(row + 1, col) && !inF(row + 1, col);
-          }
-
-          drawModule(ctxFG, actualStyle, x, y, cell, pad, hasRight, hasBottom);
-        }
-      }
-      drawFinders(ctxFG, mc, cell, baseCol, QUIET_ZONE, isForScan, canvasBgColor, actualStyle); 
-
-      var cvsMerged = document.createElement('canvas'); cvsMerged.width = TOTAL_SIZE; cvsMerged.height = TOTAL_SIZE;
-      var ctxMerged = cvsMerged.getContext('2d');
-      ctxMerged.fillStyle = canvasBgColor; ctxMerged.fillRect(0, 0, TOTAL_SIZE, TOTAL_SIZE);
-      
-      if (logoImg && logoStyleMode === 'background' && paramValue > 0){ 
-          ctxMerged.save(); 
-          ctxMerged.globalAlpha = paramValue; 
-          drawLogoContained(ctxMerged, logoImg, QUIET_ZONE, QUIET_ZONE, coreSize, coreSize); 
-          ctxMerged.restore(); 
-      }
-      
-      ctxMerged.drawImage(cvsFG, 0, 0); 
-      
-      if (logoImg && logoStyleMode === 'center' && !isForScan){
-          ctxMerged.save();
-          ctxMerged.translate(TOTAL_SIZE / 2, TOTAL_SIZE / 2);
-          ctxMerged.fillStyle = canvasBgColor;
-          ctxMerged.beginPath();
-          var logoW_Static = TOTAL_SIZE * paramValue;
-          var pad_Static = TOTAL_SIZE * (isForScan ? 0.01 : 0.02);
-          ctxMerged.roundRect(-logoW_Static/2 - pad_Static, -logoW_Static/2 - pad_Static, logoW_Static + (pad_Static*2), logoW_Static + (pad_Static*2), TOTAL_SIZE * 0.03);
-          ctxMerged.fill();
-          drawLogoContained(ctxMerged, logoImg, -logoW_Static/2, -logoW_Static/2, logoW_Static, logoW_Static);
-          ctxMerged.restore();
-      }
-
-      document.body.removeChild(tmp);
-      return { foreground: cvsFG, merged: cvsMerged, bgColor: canvasBgColor, meta: { oQR: oQR, mc: mc, cell: cell, quietZone: QUIET_ZONE, totalSize: TOTAL_SIZE } };
-    } catch(e) { if (document.body.contains(tmp)) document.body.removeChild(tmp); throw e; }
-}
-
-// A FUNÇÃO SIMULATEREALSCAN VOLTOU PRA FICAR!
-function simulateRealScan(sourceCanvas) {
-    if (typeof jsQR === 'undefined') { return { data: document.getElementById('qr-url').value }; }
-    var scanSize = 800; var temp = document.createElement('canvas'); temp.width = scanSize; temp.height = scanSize;
-    var tCtx = temp.getContext('2d'); tCtx.drawImage(sourceCanvas, 0, 0, scanSize, scanSize);
-    var imgData = tCtx.getImageData(0, 0, scanSize, scanSize);
-    return jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
-}
-
-// --- SISTEMA DE POEIRA MÁGICA: PARTÍCULAS LIVRES AO REDOR DO LOGO ---
-// Diferente da v1 (partículas viravam módulos do QR), aqui as partículas são
-// puramente decorativas e nunca tocam a malha de dados do QR — fluem livres
-// atrás/ao redor do logo com física orgânica (sem destino fixo), o que permite
-// movimento contínuo e suave em loop, sem a trava de "pousar" em um ponto exato.
-
-function sampleLogoParticles(img, count) {
-    var sCanvas = document.createElement('canvas');
-    var sSize = 56; // resolução de amostragem do logo
-    sCanvas.width = sSize; sCanvas.height = sSize;
-    var sCtx = sCanvas.getContext('2d');
-    sCtx.clearRect(0, 0, sSize, sSize);
-
-    var ratio = img.width / img.height; var dw = sSize, dh = sSize, ox = 0, oy = 0;
-    if (ratio > 1) { dh = sSize / ratio; oy = (sSize - dh) / 2; }
-    else { dw = sSize * ratio; ox = (sSize - dw) / 2; }
-    sCtx.drawImage(img, ox, oy, dw, dh);
-
-    var data = sCtx.getImageData(0, 0, sSize, sSize).data;
-    var candidates = [];
-    for (var py = 0; py < sSize; py++) {
-        for (var px = 0; px < sSize; px++) {
-            var idx = (py * sSize + px) * 4;
-            var alpha = data[idx + 3];
-            if (alpha > 80) {
-                // posição normalizada centrada em (0,0), de -0.5 a 0.5
-                candidates.push({ nx: (px / sSize) - 0.5, ny: (py / sSize) - 0.5, r: data[idx], g: data[idx+1], b: data[idx+2] });
-            }
-        }
-    }
-    for (var i = candidates.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = candidates[i]; candidates[i] = candidates[j]; candidates[j] = tmp;
-    }
-    return candidates.length ? candidates.slice(0, count) : [];
-}
-
-function buildDustParticles(logoImg, density) {
-    if (!logoImg) return null;
-    var count = Math.max(15, Math.floor(60 + (density / 100) * 140)); // 15-200 partículas
-    var samples = sampleLogoParticles(logoImg, count);
-    if (!samples.length) return null;
-
-    var particles = [];
-    samples.forEach(function(src) {
-        // raio orbital em torno da posição original no logo (efeito "desprendendo")
-        var orbitRadius = 0.04 + Math.random() * 0.10;
-        var orbitSpeed = (0.4 + Math.random() * 0.8) * (Math.random() < 0.5 ? 1 : -1); // direção aleatória
-        var driftAngle = Math.random() * Math.PI * 2;
-        var driftDist = 0.06 + Math.random() * 0.22; // o quanto se afasta do logo ao longo do loop
-        var bobSpeed = 0.6 + Math.random() * 1.2;
-        var bobPhase = Math.random() * Math.PI * 2;
-        particles.push({
-            baseNX: src.nx, baseNY: src.ny,
-            color: [src.r, src.g, src.b],
-            orbitRadius: orbitRadius, orbitSpeed: orbitSpeed, orbitPhase: Math.random() * Math.PI * 2,
-            driftAngle: driftAngle, driftDist: driftDist,
-            bobSpeed: bobSpeed, bobPhase: bobPhase,
-            sizeJitter: 0.55 + Math.random() * 0.85,
-            fadeOffset: Math.random()
-        });
-    });
-    return particles;
-}
-
-function drawDustFrame(ctx, w, h, time, baseCol, originX, originY, spanW, spanH, globalAlpha) {
-    if (!particleCache) return;
-    var t = time / 1000; // segundos
-
-    particleCache.forEach(function(p) {
-        // ciclo de "respiração": as partículas se afastam e voltam suavemente em loop contínuo (sem easing abrupto)
-        var driftCycle = (Math.sin(t * 0.5 + p.fadeOffset * Math.PI * 2) + 1) / 2; // 0→1→0 suave
-        var driftX = Math.cos(p.driftAngle) * p.driftDist * driftCycle;
-        var driftY = Math.sin(p.driftAngle) * p.driftDist * driftCycle;
-
-        // pequena órbita contínua ao redor da posição base (movimento fluido, sem paradas)
-        var orbitX = Math.cos(t * p.orbitSpeed + p.orbitPhase) * p.orbitRadius;
-        var orbitY = Math.sin(t * p.orbitSpeed + p.orbitPhase) * p.orbitRadius;
-
-        // leve flutuação vertical extra (efeito poeira no ar)
-        var bobY = Math.sin(t * p.bobSpeed + p.bobPhase) * 0.015;
-
-        var nx = p.baseNX + driftX + orbitX;
-        var ny = p.baseNY + driftY + orbitY + bobY;
-
-        var px = originX + nx * spanW;
-        var py = originY + ny * spanH;
-
-        // opacidade pulsa levemente e some um pouco quando mais afastada (profundidade)
-        var alpha = (0.35 + 0.55 * (1 - driftCycle * 0.6)) * globalAlpha;
-        var scale = 1 - driftCycle * 0.25;
-        var sizePx = (spanW * 0.018) * p.sizeJitter * scale;
-
-        ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-        ctx.fillStyle = `rgb(${rr(p.color[0])},${rr(p.color[1])},${rr(p.color[2])})`;
-        ctx.beginPath();
-        ctx.arc(px, py, Math.max(0.5, sizePx / 2), 0, Math.PI * 2);
-        ctx.fill();
-    });
-    ctx.globalAlpha = 1;
-}
-
-// --- EFEITO "REVELAÇÃO POR LUZ": reflexo de brilho diagonal que varre o QR já formado ---
-// Clareia os módulos dentro da faixa (proporcional à cor real, então funciona em qualquer cor
-// escolhida, inclusive tons claros). Intensidade e blur calibrados para não comprometer o
-// contraste necessário à leitura do QR — o brilho é visível mas sutil, nunca "estoura" o módulo
-// a ponto de se misturar com o módulo vizinho ou com o fundo.
-function drawLightSweep(ctx, w, h, time, foregroundCanvas, sweepStrength) {
-    if (!foregroundCanvas) return;
-    if (sweepStrength === undefined) sweepStrength = 1;
-    if (sweepStrength <= 0) return;
-
-    if (!lightSweepMaskCanvas || lightSweepMaskCanvas.width !== w || lightSweepMaskCanvas.height !== h) {
-        lightSweepMaskCanvas = document.createElement('canvas');
-        lightSweepMaskCanvas.width = w; lightSweepMaskCanvas.height = h;
-    }
-    var mCtx = lightSweepMaskCanvas.getContext('2d');
-    mCtx.clearRect(0, 0, w, h);
-
-    var cycleDuration = 5500; // varredura mais lenta e calma (era 3200ms)
-    var cycle = (time % cycleDuration) / cycleDuration;
-    var diag = Math.sqrt(w * w + h * h);
-    var bandWidth = diag * 0.11; // faixa mais estreita (era 0.18) — menos área do QR afetada por vez
-
-    // Direção da varredura: diagonal de (0,0) [canto superior-esquerdo] até (w,h) [canto inferior-direito].
-    // Calculamos a faixa como uma banda perpendicular a essa diagonal, deslizando ao longo dela —
-    // sem usar ctx.rotate(), o que garante que cycle=0 cai exatamente no canto (0,0) e cycle=1 no canto (w,h),
-    // em vez de depender de como a rotação em torno do centro reposiciona a origem (o que fazia o efeito
-    // parecer "nascer no meio" do QR a cada reinício do ciclo).
-    var dirX = w / diag, dirY = h / diag; // vetor unitário da diagonal
-    var travel = diag + bandWidth * 2;
-    var bandPos = -bandWidth + cycle * travel; // posição da faixa ao longo da diagonal, com folga nas pontas
-
-    mCtx.save();
-    // Move a origem para o ponto da diagonal onde o centro da faixa deve estar agora,
-    // depois rotaciona alinhado à diagonal — assim a faixa sempre "nasce" no canto (0,0) real do canvas.
-    mCtx.translate(dirX * bandPos, dirY * bandPos);
-    mCtx.rotate(Math.atan2(h, w)); // alinha a faixa com o ângulo real da diagonal w×h (não fixo em 45°)
-    var grad = mCtx.createLinearGradient(-bandWidth, 0, bandWidth, 0);
-    grad.addColorStop(0, 'rgba(255,255,255,0)');
-    grad.addColorStop(0.5, 'rgba(255,255,255,1)');
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    mCtx.fillStyle = grad;
-    mCtx.fillRect(-bandWidth, -diag, bandWidth * 2, diag * 3);
-    mCtx.restore();
-
-    mCtx.globalCompositeOperation = 'destination-in'; // mantém só onde há módulo
-    mCtx.drawImage(foregroundCanvas, 0, 0, w, h);
-    mCtx.globalCompositeOperation = 'source-over';
-
-    // 2) Desenha o resultado com intensidade moderada (era 0.9) e SEM blur/shadow — o blur antigo
-    //    espalhava luz para os pixels vizinhos do módulo, reduzindo o contraste nas bordas e
-    //    atrapalhando leitores de QR reais. sweepStrength permite fade-in suave na entrada do efeito.
-    ctx.save();
-    ctx.globalAlpha = 0.5 * sweepStrength;
-    ctx.drawImage(lightSweepMaskCanvas, 0, 0);
-    ctx.restore();
-}
-
-var lightSweepMaskCanvas = null;
-
-
-function drawAnimationFrame(ctx, w, h, time) {
-    var cx = w / 2, cy = h / 2; 
-
-
-    var padSafety = Math.ceil((w / 2048) * 100); 
-    var logoW_Large = w - padSafety * 4; 
-    
-    var logoStyleMode = document.getElementById('logo-style').value;
-    var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
-
-    var isLightModule = lum(currentActiveColor) > 0.5; 
-    var canvasBgColor = isLightModule ? '#13131a' : '#ffffff';
-    
-    ctx.resetTransform(); 
-    ctx.fillStyle = canvasBgColor; 
-    ctx.fillRect(0, 0, w, h);
-
-    if (logoStyleMode === 'center') {
-        var logoW_Small = w * sliderParam; 
-
-        if (time <= 1500) { 
-            let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy);
-            let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale); 
-            drawLogoContained(ctx, logoImg, -logoW_Large/2, -logoW_Large/2, logoW_Large, logoW_Large);
-        } else if (time <= 2200) { 
-            let p = easeInOutCubic((time - 1500) / 700);
-            ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; ctx.drawImage(layerForeground, 0, 0, w, h); ctx.restore();
-            let currentLogoW = logoW_Large - ((logoW_Large - logoW_Small) * p);
-            if (logoImg) {
-                ctx.save(); ctx.translate(cx, cy); ctx.fillStyle = canvasBgColor; ctx.beginPath();
-                let pad = w * 0.02 * p; 
-                ctx.roundRect(-currentLogoW/2 - pad, -currentLogoW/2 - pad, currentLogoW + (pad*2), currentLogoW + (pad*2), w * 0.03); ctx.fill();
-                drawLogoContained(ctx, logoImg, -currentLogoW/2, -currentLogoW/2, currentLogoW, currentLogoW); ctx.restore();
-            }
-        } else { 
-            ctx.globalAlpha = 1.0; ctx.filter = 'none'; ctx.drawImage(layerForeground, 0, 0, w, h);
-            if (logoImg) { 
-                ctx.save(); ctx.translate(cx, cy); ctx.fillStyle = canvasBgColor; ctx.beginPath();
-                let pad = w * 0.02; ctx.roundRect(-logoW_Small/2 - pad, -logoW_Small/2 - pad, logoW_Small + (pad*2), logoW_Small + (pad*2), w * 0.03); ctx.fill();
-                drawLogoContained(ctx, logoImg, -logoW_Small/2, -logoW_Small/2, logoW_Small, logoW_Small); ctx.restore(); 
-            }
-        }
-    } else if (logoStyleMode === 'particles') {
-        // QR sempre desenhado por completo e legível desde o frame 0 — nada o esconde.
-        ctx.globalAlpha = 1.0; ctx.filter = 'none';
-        ctx.drawImage(layerForeground, 0, 0, w, h);
-
-        // Logo como pequeno selo central fixo (mesmo princípio de segurança do modo "center")
-        var logoW_Dust = w * 0.20;
-        var padDust = w * 0.02;
-
-        // Poeira mágica: nuvem de partículas soltas flutuando ao redor do selo, atrás dele,
-        // num raio maior que o próprio logo — puramente decorativa, nunca sobre os módulos de dado.
-        if (particleCache) {
-            var dustSpan = w * 0.62; // área de flutuação das partículas, centrada no selo
-            drawDustFrame(ctx, w, h, time, currentActiveColor, cx, cy, dustSpan, dustSpan, 1.0);
-        }
-
-        if (logoImg) {
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.fillStyle = canvasBgColor;
-            ctx.beginPath();
-            ctx.roundRect(-logoW_Dust/2 - padDust, -logoW_Dust/2 - padDust, logoW_Dust + (padDust*2), logoW_Dust + (padDust*2), w * 0.03);
-            ctx.fill();
-            drawLogoContained(ctx, logoImg, -logoW_Dust/2, -logoW_Dust/2, logoW_Dust, logoW_Dust);
-            ctx.restore();
-        }
-    } else {
-        if (time <= 1500) { 
-            let p = easeOutCubic(Math.min(time / 1000, 1)); ctx.globalAlpha = p; ctx.translate(cx, cy);
-            let scale = 0.8 + (0.2 * p); ctx.scale(scale, scale); 
-            drawLogoContained(ctx, logoImg, -logoW_Large/2, -logoW_Large/2, logoW_Large, logoW_Large);
-        } else if (time <= 2200) { 
-            let p = easeInOutCubic((time - 1500) / 700);
-            ctx.save(); ctx.globalAlpha = 1 - p; ctx.filter = `blur(${p * 20}px)`; ctx.translate(cx, cy); let ls = 1.0 + (0.3 * p); ctx.scale(ls, ls);
-            drawLogoContained(ctx, logoImg, -logoW_Large/2, -logoW_Large/2, logoW_Large, logoW_Large); ctx.restore();
-            ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; ctx.translate(cx, cy); let qs = 0.8 + (0.2 * p); ctx.scale(qs, qs);
-            ctx.drawImage(layerForeground, -w/2, -h/2, w, h); ctx.restore();
-        } else { 
-            let p = Math.min((time - 2200) / 400, 1.0); 
-            let currentOpacity = sliderParam * easeOutCubic(p); ctx.globalAlpha = 1.0; ctx.filter = 'none';
-            if (logoImg && currentOpacity > 0) { ctx.save(); ctx.globalAlpha = currentOpacity; let qrDrawSize = w * 0.85; drawLogoContained(ctx, logoImg, (w-qrDrawSize)/2, (w-qrDrawSize)/2, qrDrawSize, qrDrawSize); ctx.restore(); }
-            ctx.drawImage(layerForeground, 0, 0, w, h);
-        }
-    }
-
-    // Efeito opcional "Revelação por Luz" — combinável com qualquer modo de logo acima.
-    // Em vez de ligar de uma vez em 2200ms (o que parecia um corte abrupto, sem fluidez),
-    // a intensidade sobe suavemente ao longo de 800ms — easeOutCubic, igual às outras transições do app.
-    var lightSweepEl = document.getElementById('chk-light-sweep');
-    if (lightSweepEl && lightSweepEl.checked && time > 2200 && layerForeground) {
-        var sweepFadeIn = easeOutCubic(Math.min((time - 2200) / 800, 1));
-        drawLightSweep(ctx, w, h, time, layerForeground, sweepFadeIn);
-    }
-}
-
-function animationLoop(timestamp) {
-    if (!animStartTime) animStartTime = timestamp; var elapsedTime = (timestamp - animStartTime) % TOTAL_ANIMATION_DURATION; 
-    var c = document.getElementById('qr-canvas');
-    if(c && c.width > 0) drawAnimationFrame(c.getContext('2d'), c.width, c.height, elapsedTime);
-    animRequest = requestAnimationFrame(animationLoop);
-}
-
-async function runEngine() {
-  var url = document.getElementById('qr-url').value; var logBox = document.getElementById('verify-log'); var finalConf = document.getElementById('final-conf');
-  if (!url || url.trim() === "") {
-      logBox.innerHTML = `<div class="vlog-item info"><span class="vlog-icon">ℹ</span><div class="vlog-body"><strong>Aguardando link válido...</strong><span>Digite o destino do QR Code.</span></div></div>`;
-      finalConf.innerHTML = '—'; if(animRequest) cancelAnimationFrame(animRequest); return; 
-  }
-  if(animRequest) cancelAnimationFrame(animRequest); animStartTime = 0;
-  
-  var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100; 
-  var styleType = document.getElementById('qr-style').value; 
-  var logoStyleMode = document.getElementById('logo-style').value;
-  var baseCol = currentActiveColor; 
-  
-  var overlay = document.getElementById('live-overlay'); if(overlay) overlay.classList.add('active'); 
-
-  try {
-    var layersPreview = await generateQRLayers(url, sliderParam, baseCol, styleType, logoStyleMode, 4, false, 800);
-    var layersScan    = await generateQRLayers(url, sliderParam, baseCol, styleType, logoStyleMode, 4, true, 800); 
-    layerForeground = layersPreview.foreground; layerDigitalMerged = layersPreview.merged;    
-    qrMetaCache = layersPreview.meta;
-
-    if (logoStyleMode === 'particles' && logoImg) {
-        var density = sliderParam * 100; // sl-logo vai de 30 a 100 nesse modo, já representa %
-        particleCache = buildDustParticles(logoImg, density);
-    } else {
-        particleCache = null;
-    }
-    
-    // CORREÇÃO ANTI-FALSO NEGATIVO: Ignora o buraco no scannerjs e valida pelo contraste real
-    var isBgDark = lum(baseCol) > 0.5; var safeColorContrast = contrast(baseCol, isBgDark ? [19,19,26] : [255,255,255]);
-    var scanResult = simulateRealScan(layersScan.merged);
-    var validationPassed = false;
-
-    if (logoStyleMode === 'center') {
-        validationPassed = (safeColorContrast >= 2.5); 
-    } else {
-        // 'background' e 'particles' nunca cobrem o QR final por cima dos módulos reais,
-        // então a validação real de leitura (jsQR) é a fonte da verdade aqui.
-        validationPassed = (scanResult && scanResult.data === url);
-    }
-    
-    if (validationPassed) {
-        logBox.innerHTML = `<div class="vlog-item ok"><span class="vlog-icon">🎯</span><div class="vlog-body"><strong>Validação de Leitura: Aprovada!</strong><span>O design está com contraste ideal e dados mapeados com segurança.</span></div></div>`;
-        finalConf.innerHTML = '<strong style="color:var(--ok-border)">Operacional</strong>';
-    } else {
-        logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Validação de Leitura: Falhou</strong><span>Câmera pode ter dificuldade. Aumente o contraste (troque a cor do QR).</span></div></div>`;
-        finalConf.innerHTML = '<strong style="color:var(--fail-border)">Risco Detetado</strong>';
-    }
-    
-    var destCanvas = document.getElementById('qr-canvas'); if(destCanvas) { destCanvas.width = 1200; destCanvas.height = 1200; }
-    drawAnimationFrame(destCanvas.getContext('2d'), 1200, 1200, 9999); animRequest = requestAnimationFrame(animationLoop);
-  } catch (err) {
-    logBox.innerHTML = `<div class="vlog-item fail"><span class="vlog-icon">⚠</span><div class="vlog-body"><strong>Erro no Processamento</strong><span>${err.message || 'Falha ao renderizar. Verifique o link.'}</span></div></div>`;
-    finalConf.innerHTML = '<strong style="color:var(--fail-border)">Falha Crítica</strong>';
-  } finally { if(overlay) overlay.classList.remove('active'); }
-}
-
-function triggerLiveUpdate() { clearTimeout(liveUpdateTimer); liveUpdateTimer = setTimeout(() => { runEngine(); }, 250); }
-
-document.getElementById('qr-url').addEventListener('input', triggerLiveUpdate);
-document.getElementById('qr-style').addEventListener('change', triggerLiveUpdate);
-document.getElementById('chk-light-sweep').addEventListener('change', triggerLiveUpdate);
-
-document.getElementById('btn-png-digital').onclick = function(){
-  if (isPremiumUser) {
-    var a = document.createElement('a');
-    a.download = 'QRforma-Digital.png';
-    a.href = layerDigitalMerged.toDataURL();
-    a.click();
-    return;
-  }
-
-  if (applyBlurIfLimitReached()) {
-    triggerPaywallFlow();
-    return;
-  }
-
-  var a = document.createElement('a');
-  a.download = 'QRforma-Digital.png';
-  a.href = layerDigitalMerged.toDataURL();
-  a.click();
-
-  let freeDownloads = parseInt(localStorage.getItem('qrforma_free_downloads') || '0');
-  freeDownloads++;
-  localStorage.setItem('qrforma_free_downloads', freeDownloads);
-
-  let restam = 3 - freeDownloads;
-  if (restam > 0) {
-    alert(`Download concluído! Você ainda tem ${restam} ${restam === 1 ? 'download gratuito disponível' : 'downloads gratuitos disponíveis'}.`);
-  } else {
-    alert("Atenção: Este foi o seu último download gratuito.");
-    applyBlurIfLimitReached(); 
-  }
-};
-
-document.getElementById('btn-png-print').onclick = async function(){
-  if (!isPremiumUser) { triggerPaywallFlow(); return; }
-  
-  var btn = this; var oldTxt = btn.innerText; btn.innerText = "⏳ Gerando Impressão...";
-  try {
-    var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
-    var logoStyleMode = document.getElementById('logo-style').value;
-    var l = await generateQRLayers(document.getElementById('qr-url').value, sliderParam, currentActiveColor, document.getElementById('qr-style').value, logoStyleMode, 4, false, 2048);
-    var a = document.createElement('a'); a.download = 'QRforma-Impressao.png'; a.href = l.merged.toDataURL('image/png'); a.click();
-  } catch(e) { alert("Erro ao gerar arquivo: " + e.message); }
-  btn.innerText = oldTxt;
-};
-
-// Detecta o melhor mimeType de MP4 nativo suportado pelo navegador (Safari/Android costumam suportar; Chrome desktop geralmente não)
-function getBestNativeMp4MimeType() {
-  var candidates = [
-    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-    'video/mp4;codecs=h264,aac',
-    'video/mp4'
-  ];
-  for (var i = 0; i < candidates.length; i++) {
-    if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(candidates[i])) {
-      return candidates[i];
-    }
-  }
-  return null;
-}
-
-var ffmpegInstance = null;
-async function getFFmpeg(onLog) {
-  if (ffmpegInstance) return ffmpegInstance;
-  var { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js');
-  var { toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
-  var ffmpeg = new FFmpeg();
-  if (onLog) ffmpeg.on('log', function(ev) { onLog(ev.message); });
-  var coreBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
-  await ffmpeg.load({
-    coreURL: await toBlobURL(coreBase + '/ffmpeg-core.js', 'text/javascript'),
-    wasmURL: await toBlobURL(coreBase + '/ffmpeg-core.wasm', 'application/wasm')
-  });
-  ffmpegInstance = ffmpeg;
-  return ffmpeg;
-}
-
-async function convertWebmToMp4(webmBlob, onProgress) {
-  var { fetchFile } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
-  var ffmpeg = await getFFmpeg();
-  if (onProgress) {
-    ffmpeg.on('progress', function(ev) { onProgress(Math.min(99, Math.round((ev.progress || 0) * 100))); });
-  }
-  await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
-  // -crf 18 = qualidade alta visualmente sem perdas perceptíveis; -preset fast = bom equilíbrio velocidade/tamanho no wasm
-  await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', 'output.mp4']);
-  var data = await ffmpeg.readFile('output.mp4');
-  await ffmpeg.deleteFile('input.webm');
-  await ffmpeg.deleteFile('output.mp4');
-  return new Blob([data.buffer], { type: 'video/mp4' });
-}
-
-function downloadBlob(blob, filename) {
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a'); a.href = url; a.download = filename; a.click();
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
-}
-
-async function recordCanvasAnimation(vCanvas, mimeType) {
-  var stream = vCanvas.captureStream(60);
-  var recorder = new MediaRecorder(stream, { mimeType: mimeType });
-  var chunks = [];
-  recorder.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
-
-  var stopPromise = new Promise(function(resolve) {
-    recorder.onstop = function() { resolve(new Blob(chunks, { type: mimeType })); };
-  });
-
-  recorder.start();
-  var vCtx = vCanvas.getContext('2d');
-  var totalDur = TOTAL_ANIMATION_DURATION, fps = 60, frameTime = 1000 / fps;
-  for (let t = 0; t <= totalDur; t += frameTime) {
-    drawAnimationFrame(vCtx, vCanvas.width, vCanvas.height, t);
-    await new Promise(function(r) { setTimeout(r, frameTime); });
-  }
-  recorder.stop();
-  return stopPromise;
-}
-
-document.getElementById('btn-dl-video').addEventListener('click', async function(){
-  if (!isPremiumUser) { triggerPaywallFlow(); return; }
-
-  var loaderBox = document.getElementById('loader-video');
-  var loaderMsg = document.getElementById('loader-msg');
-  loaderBox.style.display = 'flex';
-  loaderMsg.textContent = 'Renderizando Vídeo HD...';
-
-  var vCanvas = document.createElement('canvas'); vCanvas.width = 1080; vCanvas.height = 1080;
-
-  var sliderParam = parseInt(document.getElementById('sl-logo').value) / 100;
-  var logoStyleMode = document.getElementById('logo-style').value;
-  var tempHighRes = await generateQRLayers(document.getElementById('qr-url').value, sliderParam, currentActiveColor, document.getElementById('qr-style').value, logoStyleMode, 4, false, 1080);
-
-  var oldForeground = layerForeground; layerForeground = tempHighRes.foreground;
-
-  try {
-    var nativeMp4Type = getBestNativeMp4MimeType();
-    var finalBlob = null;
-
-    if (nativeMp4Type) {
-      // Caminho rápido: o próprio navegador grava MP4 direto, sem conversão extra.
-      var mp4Blob = await recordCanvasAnimation(vCanvas, nativeMp4Type);
-      // Alguns navegadores reportam suporte a MP4 mas geram arquivo vazio/corrompido na prática.
-      // Um vídeo 1080x1080 60fps de 10s nunca deve sair com menos de ~50KB; se sair, tratamos como falha e caímos no fallback.
-      if (mp4Blob && mp4Blob.size > 50000) {
-        finalBlob = mp4Blob;
-      }
-    }
-
-    if (!finalBlob) {
-      // Fallback: grava webm (sempre suportado) e converte pra MP4 com FFmpeg.wasm no próprio navegador.
-      var webmBlob = await recordCanvasAnimation(vCanvas, 'video/webm');
-      loaderMsg.textContent = 'Convertendo para MP4... 0%';
-      finalBlob = await convertWebmToMp4(webmBlob, function(pct) {
-        loaderMsg.textContent = 'Convertendo para MP4... ' + pct + '%';
-      });
-    }
-
-    downloadBlob(finalBlob, 'QRforma-Motion-15s-60fps.mp4');
-  } catch (err) {
-    alert('Erro ao gerar o vídeo MP4: ' + (err && err.message ? err.message : 'falha desconhecida') + '. Tente novamente.');
-  } finally {
-    loaderBox.style.display = 'none';
-    loaderMsg.textContent = 'Renderizando Vídeo HD...';
-    layerForeground = oldForeground;
-  }
-});
-
-
-
-var pixAnimReq = null;
-var pixLogo = new Image();
-pixLogo.src = 'LogoQRforma.png'; 
-
-async function animatePixQR(pixText) {
-    var canvas = document.getElementById('canvas-qr-pix'); if(!canvas) return;
-    var ctx = canvas.getContext('2d');
-    canvas.width = 800; canvas.height = 800;
-    
-    if (!pixLogo.complete) { await new Promise(r => pixLogo.onload = r); }
-    
-    var l = await generateQRLayers(pixText, 0, [255, 255, 255], 'square', 'center', 4, true, 800, QRCode.CorrectLevel.L);
-    var pixLayer = l.foreground;
-    
-    var startTime = performance.now();
-    
-    function loop(now) {
-        var t = (now - startTime) % 10000; 
-        var w = 800, h = 800, cx = 400, cy = 400;
-        var logoW = 500; 
-        
-        ctx.fillStyle = '#13131a';
-        ctx.fillRect(0, 0, w, h);
-        
-        if (t <= 1500) { 
-            let p = easeOutCubic(Math.min(t / 1000, 1)); 
-            ctx.globalAlpha = p; 
-            ctx.save(); ctx.translate(cx, cy); let s = 0.8 + (0.2 * p); ctx.scale(s, s); 
-            drawLogoContained(ctx, pixLogo, -logoW/2, -logoW/2, logoW, logoW); 
-            ctx.restore();
-        } else if (t <= 2200) { 
-            let p = easeInOutCubic((t - 1500) / 700);
-            
-            ctx.save(); ctx.globalAlpha = 1 - p; ctx.filter = `blur(${p * 20}px)`; 
-            ctx.translate(cx, cy); let ls = 1.0 + (0.3 * p); ctx.scale(ls, ls);
-            drawLogoContained(ctx, pixLogo, -logoW/2, -logoW/2, logoW, logoW); 
-            ctx.restore();
-            
-            ctx.save(); ctx.globalAlpha = p; ctx.filter = `blur(${(1 - p) * 20}px)`; 
-            ctx.translate(cx, cy); let qs = 0.8 + (0.2 * p); ctx.scale(qs, qs);
-            ctx.drawImage(pixLayer, -w/2, -h/2, w, h); 
-            ctx.restore();
-        } else { 
-            ctx.globalAlpha = 1.0; 
-            ctx.filter = 'none';
-            ctx.drawImage(pixLayer, 0, 0, w, h);
-        }
-        pixAnimReq = requestAnimationFrame(loop);
-    }
-    
-    if(pixAnimReq) cancelAnimationFrame(pixAnimReq);
-    pixAnimReq = requestAnimationFrame(loop);
-}
-
-setTimeout(() => { triggerLiveUpdate(); }, 400);
-</script>
 </body>
 </html>
