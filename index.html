@@ -358,6 +358,7 @@
     <option value="fluid">Gotas fluidas</option>
     <option value="diamond">Diamantes geométricos</option>
     <option value="hexagon">Hexagonal</option>
+    <option value="extruded">Extrudado 3D</option>
   </select>
   <div class="chip-row" id="qr-style-chips">
     <button type="button" class="chip is-active" data-style="organic">Orgânico</button>
@@ -367,7 +368,9 @@
     <button type="button" class="chip" data-style="fluid">Gotas</button>
     <button type="button" class="chip" data-style="diamond">Diamantes</button>
     <button type="button" class="chip" data-style="hexagon">Hexagonal</button>
+    <button type="button" class="chip" data-style="extruded">Extrudado 3D</button>
   </div>
+
 
   <div class="color-picking-zone" id="tut-target-colors">
     <div class="color-header-actions" style="margin-bottom: 4px;">
@@ -893,7 +896,7 @@ function renderPalette(){
 }
 
 // --- INTEGRAÇÃO DO DESIGN MÓDULO ORGÂNICO / LÍQUIDO ---
-function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
+function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom, baseCol) {
   var r = size / 2, cx = x + r, cy = y + r, d = size - (pad * 2);
   ctx.beginPath();
   if (type === 'circle') { 
@@ -926,6 +929,50 @@ function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom) {
           ctx.arcTo(p0[0], p0[1], p1[0], p1[1], rounding);
       }
       ctx.closePath(); ctx.fill();
+  } else if (type === 'extruded') {
+      // EFEITO "3D" SIMULADO EM CANVAS 2D PURO (técnica neumorphic/claymorphic):
+      // não é geometria 3D real — é sombra de contato + gradiente + highlight especular,
+      // calculados a partir da cor real do módulo (baseCol), dando sensação de volume/profundidade
+      // sem nenhuma dependência externa (WebGL/Three.js), mantendo o pipeline 100% leve e confiável.
+      // Usa pad maior que os outros estilos (definido em generateQRLayers) para os módulos terem
+      // respiro suficiente — sem isso, a "parede" e a sombra de um módulo ficam encobertas pelo vizinho.
+      var bc = baseCol || [255, 122, 26];
+      var ex = x + pad, ey = y + pad, ew = d, eh = d;
+      var er = Math.min(ew, eh) * 0.30;
+      var wallDepth = Math.min(ew, eh) * 0.22;
+
+      // sombra de contato (projeta no fundo branco, simula luz vindo de cima-esquerda) — mais forte e espalhada
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.45)';
+      ctx.shadowBlur = size * 0.22;
+      ctx.shadowOffsetX = size * 0.16;
+      ctx.shadowOffsetY = size * 0.20;
+      ctx.fillStyle = 'rgba(0,0,0,0.001)';
+      ctx.beginPath(); ctx.roundRect(ex, ey, ew, eh, er); ctx.fill();
+      ctx.restore();
+
+      // "parede" inferior-direita (face escura do prisma, deslocada o suficiente para ficar visível)
+      var darkR = Math.max(0, bc[0]-70), darkG = Math.max(0, bc[1]-70), darkB = Math.max(0, bc[2]-55);
+      ctx.fillStyle = `rgb(${rr(darkR)},${rr(darkG)},${rr(darkB)})`;
+      ctx.beginPath(); ctx.roundRect(ex + wallDepth, ey + wallDepth, ew, eh, er); ctx.fill();
+
+      // face superior (tampa do prisma) com gradiente diagonal claro→cor real, mais contrastado
+      var grad = ctx.createLinearGradient(ex, ey, ex+ew, ey+eh);
+      grad.addColorStop(0, `rgb(${Math.min(255,bc[0]+65)},${Math.min(255,bc[1]+65)},${Math.min(255,bc[2]+55)})`);
+      grad.addColorStop(0.55, `rgb(${rr(bc[0])},${rr(bc[1])},${rr(bc[2])})`);
+      grad.addColorStop(1, `rgb(${Math.max(0,bc[0]-20)},${Math.max(0,bc[1]-20)},${Math.max(0,bc[2]-15)})`);
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.roundRect(ex, ey, ew, eh, er); ctx.fill();
+
+      // highlight especular fino no topo (luz direta refletindo)
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = Math.max(1, size * 0.045);
+      ctx.beginPath();
+      ctx.moveTo(ex + er, ey + size*0.04);
+      ctx.lineTo(ex + ew - er, ey + size*0.04);
+      ctx.stroke();
+      ctx.restore();
   }
 }
 
@@ -988,7 +1035,7 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
       var ctxFG = cvsFG.getContext('2d'); if (!ctxFG) throw new Error("Memória insuficiente.");
       ctxFG.clearRect(0, 0, TOTAL_SIZE, TOTAL_SIZE); 
 
-      var pad = isForScan || styleType === 'classic' ? 0 : cell * 0.08; 
+      var pad = isForScan || styleType === 'classic' ? 0 : (styleType === 'extruded' ? cell * 0.16 : cell * 0.08); 
       var actualStyle = isForScan ? 'square' : styleType;
       
       for (var row = 0; row < mc; row++){
@@ -1005,7 +1052,7 @@ async function generateQRLayers(url, paramValue, baseCol, styleType, logoStyleMo
              hasBottom = (row + 1 < mc) && oQR.isDark(row + 1, col) && !inF(row + 1, col);
           }
 
-          drawModule(ctxFG, actualStyle, x, y, cell, pad, hasRight, hasBottom);
+          drawModule(ctxFG, actualStyle, x, y, cell, pad, hasRight, hasBottom, baseCol);
         }
       }
       drawFinders(ctxFG, mc, cell, baseCol, QUIET_ZONE, isForScan, canvasBgColor, actualStyle); 
