@@ -930,48 +930,74 @@ function drawModule(ctx, type, x, y, size, pad, hasRight, hasBottom, baseCol) {
       }
       ctx.closePath(); ctx.fill();
   } else if (type === 'extruded') {
-      // EFEITO "3D" SIMULADO EM CANVAS 2D PURO (técnica neumorphic/claymorphic):
-      // não é geometria 3D real — é sombra de contato + gradiente + highlight especular,
-      // calculados a partir da cor real do módulo (baseCol), dando sensação de volume/profundidade
-      // sem nenhuma dependência externa (WebGL/Three.js), mantendo o pipeline 100% leve e confiável.
-      // Usa pad maior que os outros estilos (definido em generateQRLayers) para os módulos terem
-      // respiro suficiente — sem isso, a "parede" e a sombra de um módulo ficam encobertas pelo vizinho.
+      // EFEITO 3D MULTICAMADA — canvas 2D puro, sem WebGL:
+      // 6 camadas empilhadas (sombra ambiente → face traseira → face lateral → face superior
+      // com gradiente → rim highlight duplo → brilho especular circular) reproduzem
+      // a física de luz de um bloco cerâmico polido iluminado de cima-esquerda.
       var bc = baseCol || [255, 122, 26];
       var ex = x + pad, ey = y + pad, ew = d, eh = d;
-      var er = Math.min(ew, eh) * 0.30;
-      var wallDepth = Math.min(ew, eh) * 0.22;
+      var er  = Math.min(ew, eh) * 0.22;
+      var dep = Math.min(ew, eh) * 0.22; // profundidade de extrusão (mesmo limite do wallDepth anterior)
 
-      // sombra de contato (projeta no fundo branco, simula luz vindo de cima-esquerda) — mais forte e espalhada
+      // Camada 1: sombra ambiente projetada no fundo — mais suave e espalhada que antes
       ctx.save();
-      ctx.shadowColor = 'rgba(0,0,0,0.45)';
-      ctx.shadowBlur = size * 0.22;
-      ctx.shadowOffsetX = size * 0.16;
-      ctx.shadowOffsetY = size * 0.20;
-      ctx.fillStyle = 'rgba(0,0,0,0.001)';
+      ctx.shadowColor    = 'rgba(0,0,0,0.62)';
+      ctx.shadowBlur     = size * 0.30;
+      ctx.shadowOffsetX  = size * 0.20;
+      ctx.shadowOffsetY  = size * 0.22;
+      ctx.fillStyle      = 'rgba(0,0,0,0.001)';
       ctx.beginPath(); ctx.roundRect(ex, ey, ew, eh, er); ctx.fill();
       ctx.restore();
 
-      // "parede" inferior-direita (face escura do prisma, deslocada o suficiente para ficar visível)
-      var darkR = Math.max(0, bc[0]-70), darkG = Math.max(0, bc[1]-70), darkB = Math.max(0, bc[2]-55);
-      ctx.fillStyle = `rgb(${rr(darkR)},${rr(darkG)},${rr(darkB)})`;
-      ctx.beginPath(); ctx.roundRect(ex + wallDepth, ey + wallDepth, ew, eh, er); ctx.fill();
+      // Camada 2: face traseira mais recuada (tom mais escuro — base da extrusão)
+      ctx.fillStyle = `rgb(${rr(Math.max(0,bc[0]-95))},${rr(Math.max(0,bc[1]-95))},${rr(Math.max(0,bc[2]-80))})`;
+      ctx.beginPath(); ctx.roundRect(ex + dep, ey + dep, ew, eh, er); ctx.fill();
 
-      // face superior (tampa do prisma) com gradiente diagonal claro→cor real, mais contrastado
+      // Camada 3: face lateral direita/inferior (tom médio — parede visível do prisma)
+      ctx.fillStyle = `rgb(${rr(Math.max(0,bc[0]-52))},${rr(Math.max(0,bc[1]-52))},${rr(Math.max(0,bc[2]-42))})`;
+      ctx.beginPath(); ctx.roundRect(ex + dep*0.5, ey + dep*0.5, ew, eh, er); ctx.fill();
+
+      // Camada 4: face superior — gradiente de 3 paradas: topo-esquerdo claro → cor real → sombra leve
+      var ltR = Math.min(255,bc[0]+82), ltG = Math.min(255,bc[1]+82), ltB = Math.min(255,bc[2]+72);
+      var sdR = Math.max(0,bc[0]-38),   sdG = Math.max(0,bc[1]-38),   sdB = Math.max(0,bc[2]-30);
       var grad = ctx.createLinearGradient(ex, ey, ex+ew, ey+eh);
-      grad.addColorStop(0, `rgb(${Math.min(255,bc[0]+65)},${Math.min(255,bc[1]+65)},${Math.min(255,bc[2]+55)})`);
-      grad.addColorStop(0.55, `rgb(${rr(bc[0])},${rr(bc[1])},${rr(bc[2])})`);
-      grad.addColorStop(1, `rgb(${Math.max(0,bc[0]-20)},${Math.max(0,bc[1]-20)},${Math.max(0,bc[2]-15)})`);
+      grad.addColorStop(0,    `rgb(${rr(ltR)},${rr(ltG)},${rr(ltB)})`);
+      grad.addColorStop(0.42, `rgb(${rr(bc[0])},${rr(bc[1])},${rr(bc[2])})`);
+      grad.addColorStop(1,    `rgb(${rr(sdR)},${rr(sdG)},${rr(sdB)})`);
       ctx.fillStyle = grad;
       ctx.beginPath(); ctx.roundRect(ex, ey, ew, eh, er); ctx.fill();
 
-      // highlight especular fino no topo (luz direta refletindo)
+      // Camada 5: rim highlight duplo — aresta superior (forte) + aresta esquerda (sutil)
+      // simula luz direta refletida nas bordas chanfradas do bloco
       ctx.save();
-      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-      ctx.lineWidth = Math.max(1, size * 0.045);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(255,255,255,0.72)';
+      ctx.lineWidth   = Math.max(1, size * 0.058);
       ctx.beginPath();
-      ctx.moveTo(ex + er, ey + size*0.04);
-      ctx.lineTo(ex + ew - er, ey + size*0.04);
+      ctx.moveTo(ex + er + size*0.01, ey + size*0.038);
+      ctx.lineTo(ex + ew - er - size*0.01, ey + size*0.038);
       ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+      ctx.lineWidth   = Math.max(1, size * 0.042);
+      ctx.beginPath();
+      ctx.moveTo(ex + size*0.038, ey + er + size*0.01);
+      ctx.lineTo(ex + size*0.038, ey + eh - er - size*0.01);
+      ctx.stroke();
+      ctx.restore();
+
+      // Camada 6: brilho especular circular — reflexo de ponto de luz no canto superior-esquerdo,
+      // clippado à forma do módulo para não vazar nas bordas arredondadas
+      ctx.save();
+      ctx.beginPath(); ctx.roundRect(ex, ey, ew, eh, er); ctx.clip();
+      var grd = ctx.createRadialGradient(
+          ex + ew*0.28, ey + eh*0.24, 0,
+          ex + ew*0.28, ey + eh*0.24, ew*0.44
+      );
+      grd.addColorStop(0,   'rgba(255,255,255,0.44)');
+      grd.addColorStop(0.40,'rgba(255,255,255,0.15)');
+      grd.addColorStop(1,   'rgba(255,255,255,0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(ex, ey, ew, eh);
       ctx.restore();
   }
 }
@@ -999,6 +1025,61 @@ function drawFinders(ctx, n, cell, col, offset, isForScan, canvasBgColor, styleT
 
         ctx.fillStyle = fc; ctx.beginPath();
         ctx.moveTo(cx, cy - rIn); ctx.lineTo(cx + rIn, cy); ctx.lineTo(cx, cy + rIn); ctx.lineTo(cx - rIn, cy); ctx.closePath(); ctx.fill();
+    } else if (styleType === 'extruded' && !isForScan) {
+        // FINDER PATTERN 3D — mesma pilha de camadas dos módulos aplicada ao anel externo e ao miolo
+        var fdep = cell * 0.18; // profundidade de extrusão dos finders (ligeiramente menor que módulos)
+
+        // 0. Limpa a área de fundo
+        ctx.fillStyle = canvasBgColor;
+        ctx.beginPath(); ctx.roundRect(x0-padW, y0-padW, s7+(padW*2), s7+(padW*2), cell*0.8); ctx.fill();
+
+        // ANEL EXTERNO 7×7
+        var or_rer = s7 * 0.12;
+        ctx.fillStyle = `rgb(${rr(Math.max(0,fcArray[0]-90))},${rr(Math.max(0,fcArray[1]-90))},${rr(Math.max(0,fcArray[2]-75))})`;
+        ctx.beginPath(); ctx.roundRect(x0+fdep, y0+fdep, s7, s7, or_rer); ctx.fill();
+        ctx.fillStyle = `rgb(${rr(Math.max(0,fcArray[0]-48))},${rr(Math.max(0,fcArray[1]-48))},${rr(Math.max(0,fcArray[2]-40))})`;
+        ctx.beginPath(); ctx.roundRect(x0+fdep*0.5, y0+fdep*0.5, s7, s7, or_rer); ctx.fill();
+        var gOR = ctx.createLinearGradient(x0, y0, x0+s7, y0+s7);
+        gOR.addColorStop(0,    `rgb(${rr(Math.min(255,fcArray[0]+75))},${rr(Math.min(255,fcArray[1]+75))},${rr(Math.min(255,fcArray[2]+65))})`);
+        gOR.addColorStop(0.44, `rgb(${rr(fcArray[0])},${rr(fcArray[1])},${rr(fcArray[2])})`);
+        gOR.addColorStop(1,    `rgb(${rr(Math.max(0,fcArray[0]-35))},${rr(Math.max(0,fcArray[1]-35))},${rr(Math.max(0,fcArray[2]-28))})`);
+        ctx.fillStyle = gOR; ctx.beginPath(); ctx.roundRect(x0, y0, s7, s7, or_rer); ctx.fill();
+        // rim + especular no anel
+        ctx.save();
+        ctx.strokeStyle='rgba(255,255,255,0.68)'; ctx.lineWidth=Math.max(2,cell*0.052); ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(x0+or_rer+2, y0+cell*0.04); ctx.lineTo(x0+s7-or_rer-2, y0+cell*0.04); ctx.stroke();
+        ctx.restore();
+        ctx.save();
+        ctx.beginPath(); ctx.roundRect(x0, y0, s7, s7, or_rer); ctx.clip();
+        var gSOR = ctx.createRadialGradient(x0+s7*0.26, y0+s7*0.22, 0, x0+s7*0.26, y0+s7*0.22, s7*0.40);
+        gSOR.addColorStop(0,'rgba(255,255,255,0.38)'); gSOR.addColorStop(0.42,'rgba(255,255,255,0.11)'); gSOR.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.fillStyle=gSOR; ctx.fillRect(x0, y0, s7, s7); ctx.restore();
+
+        // BURACO INTERNO 5×5 (fundo)
+        ctx.fillStyle = canvasBgColor;
+        ctx.beginPath(); ctx.roundRect(x0+cell, y0+cell, cell*5, cell*5, cell*0.5); ctx.fill();
+
+        // MIOLO 3×3
+        var id_x=x0+cell*2, id_y=y0+cell*2, id_w=cell*3, id_h=cell*3, id_rer=id_w*0.20;
+        ctx.fillStyle = `rgb(${rr(Math.max(0,fcArray[0]-90))},${rr(Math.max(0,fcArray[1]-90))},${rr(Math.max(0,fcArray[2]-75))})`;
+        ctx.beginPath(); ctx.roundRect(id_x+fdep, id_y+fdep, id_w, id_h, id_rer); ctx.fill();
+        ctx.fillStyle = `rgb(${rr(Math.max(0,fcArray[0]-48))},${rr(Math.max(0,fcArray[1]-48))},${rr(Math.max(0,fcArray[2]-40))})`;
+        ctx.beginPath(); ctx.roundRect(id_x+fdep*0.5, id_y+fdep*0.5, id_w, id_h, id_rer); ctx.fill();
+        var gID = ctx.createLinearGradient(id_x, id_y, id_x+id_w, id_y+id_h);
+        gID.addColorStop(0,    `rgb(${rr(Math.min(255,fcArray[0]+75))},${rr(Math.min(255,fcArray[1]+75))},${rr(Math.min(255,fcArray[2]+65))})`);
+        gID.addColorStop(0.44, `rgb(${rr(fcArray[0])},${rr(fcArray[1])},${rr(fcArray[2])})`);
+        gID.addColorStop(1,    `rgb(${rr(Math.max(0,fcArray[0]-35))},${rr(Math.max(0,fcArray[1]-35))},${rr(Math.max(0,fcArray[2]-28))})`);
+        ctx.fillStyle=gID; ctx.beginPath(); ctx.roundRect(id_x, id_y, id_w, id_h, id_rer); ctx.fill();
+        ctx.save();
+        ctx.strokeStyle='rgba(255,255,255,0.68)'; ctx.lineWidth=Math.max(2,cell*0.052); ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(id_x+id_rer+2, id_y+cell*0.04); ctx.lineTo(id_x+id_w-id_rer-2, id_y+cell*0.04); ctx.stroke();
+        ctx.restore();
+        ctx.save();
+        ctx.beginPath(); ctx.roundRect(id_x, id_y, id_w, id_h, id_rer); ctx.clip();
+        var gSID = ctx.createRadialGradient(id_x+id_w*0.28, id_y+id_h*0.24, 0, id_x+id_w*0.28, id_y+id_h*0.24, id_w*0.44);
+        gSID.addColorStop(0,'rgba(255,255,255,0.42)'); gSID.addColorStop(0.42,'rgba(255,255,255,0.13)'); gSID.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.fillStyle=gSID; ctx.fillRect(id_x, id_y, id_w, id_h); ctx.restore();
+
     } else {
         ctx.fillStyle = canvasBgColor; ctx.beginPath(); 
         if (isForScan) ctx.fillRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2)); else ctx.roundRect(x0 - padW, y0 - padW, s7 + (padW*2), s7 + (padW*2), cell * 0.8); ctx.fill();
